@@ -89,7 +89,12 @@ if __name__ == '__main__':
         'S3': '#4000ff', # 594 color blueish, better than  pink or magenta?
         'S4': 'red', # 647
         'S5': 'pink', # scatter
-        '11': 'black', 21: 'green', 31: 'yellow', 41: 'red', 51: 'blue', 63: 'pink'
+        '11': 'black', 21: 'green', 31: 'yellow', 41: 'red', 51: 'blue', 63: 'pink',
+        'D488': 'green',
+        'D532': 'orange',
+        'D594': '#4000ff',
+        'D647': 'red',
+        'J000': 'black'
     }
 
     unique_spots = df['spot'].unique()  # [:5] # TODO
