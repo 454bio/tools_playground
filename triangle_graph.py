@@ -102,6 +102,9 @@ if __name__ == '__main__':
                 continue
             print(tupy, tupx, end=" ", flush=True)
 
+            x_channel = tupx[0]+str(tupx[1])
+            y_channel = tupy[0]+str(tupy[1])
+
             for sidx, s in enumerate(unique_spots):
                 # one spot
                 dft = df.loc[(df['spot'] == s)]
@@ -116,15 +119,15 @@ if __name__ == '__main__':
                         marker_color=spot_colors[sidx],
                         #marker_color=colormap[s],
                         marker=dict(size=2), mode='markers',
-                        name='S' + str(s) + '_' + tupy[0] + str(tupy[1]) + '_' + tupx[0] + str(tupx[1])
+                        name='S' + str(s) + '_' + y_channel + '_' + x_channel
                     ),
                     row=r + 1, col=c + 1
                 )
 
             if c == 0:
-                fig.update_yaxes(title_text=tupy[0] + str(tupy[1]), row=r + 1, col=c + 1)
+                fig.update_yaxes(title_text=y_channel, row=r + 1, col=c + 1)
             if r == len(channels) - 1:
-                fig.update_xaxes(title_text=tupx[0] + str(tupx[1]), row=r + 1, col=c + 1)
+                fig.update_xaxes(title_text=x_channel, row=r + 1, col=c + 1)
 
     fig.update_layout(height=2000, width=3000,
                       title_text="")
