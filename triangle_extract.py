@@ -6,10 +6,11 @@ import cv2 as cv
 import numpy as np
 import pandas as pd
 import os
-import glob
 import argparse
 from scipy import ndimage
 import pathlib
+
+from common import *
 
 # TODO, subtract 4096?
 #S0 background, S1: S2: S3: S4:   S5 scatter
@@ -20,8 +21,10 @@ im5=6
 
 def main(inputpath: str, roizipfilepath : str, outputfilename: str):
 
-    file_names = sorted(glob.glob(inputpath + "/*tif", recursive=False))
-    print(f"Found {len(file_names)} tif files.")
+    df_files = get_cycle_files(inputpath)
+    print(df_files)
+    print(type(df_files))
+
 
     # check if roifile exists
     if not pathlib.Path(roizipfilepath).is_file():
@@ -34,13 +37,12 @@ def main(inputpath: str, roizipfilepath : str, outputfilename: str):
     rows_list = []
 
     # read image size from first image
-    image0 = cv.imread(file_names[2], cv.IMREAD_UNCHANGED)[:, :, ::-1]  # BGR to RGB, 16bit data
+    image0 = cv.imread(df_files.iloc[0]['filenamepath'], cv.IMREAD_UNCHANGED)[:, :, ::-1]  # BGR to RGB, 16bit data
     print(f"Image shape {image0.shape}")
 
     # mask for one RGB channel
     mask = np.zeros(image0.shape[:2], dtype=np.uint8)
     print(f"mask: {type(mask)}, {mask.dtype}, {mask.shape}")
-    print(f"mask shape {mask.shape[:2]}")
 
     for idx, roi in enumerate(rois):
         if __debug__:
@@ -66,40 +68,26 @@ def main(inputpath: str, roizipfilepath : str, outputfilename: str):
     plt.imshow(mask)
     plt.show()
 
+    # filter df
+    df_files = df_files[1:6]
 
-    for idx, filename in enumerate(file_names):  # TODO use only last images in cycle
 
-        print(f"{idx}  {os.path.basename(filename)}", end="\n")
-        # extract file info
-        file_info = os.path.basename(filename).rstrip(".tif").split("_")
 
-        # small protection against additional files
-        if not file_info[0].startswith('000'):
-            continue
+    for index, row in df_files.iterrows():
 
-        file_info_number = file_info[0]
-        #         if not int(file_info_number) in range(7,12):
-        if not int(file_info_number) in range(im1,im5+1):
-            continue
-        file_info_wl = file_info[3]
+        filenamepath = row['filenamepath']
+        file_info_nb = row['file_info_nb']
+        file_info_wl = row['wavelength']
+        file_info_cy = row['cycle']
+        file_info_ts = row['timestamp']
 
-        if '_C' in filename:
-            file_info_cy = int(file_info[4].lstrip("C"))
-            file_info_ts = file_info[5]
-        else:
-            file_info_cy = 1 #int(file_info[4].lstrip("C"))
-            file_info_ts = file_info[4]
+        filename = os.path.basename(filenamepath)
+        print(f"{index:4}   {filename:43}   WL:{file_info_wl:4}   CY:{file_info_cy:3}   TS:{file_info_ts:9}")
 
-        print(f"WL:{file_info_wl}  CY:{file_info_cy}  TS:{file_info_ts}")
 
-        image = cv.imread(filename, cv.IMREAD_UNCHANGED)[:, :, ::-1]  # BGR to RGB, 16bit data
+        image = cv.imread(filenamepath, cv.IMREAD_UNCHANGED)[:, :, ::-1]  # BGR to RGB, 16bit data
 #        image[image<4096]=4096
 #        image -= 4096
-
-        # FOR each label/spot
-
-        print(f"sizes shape {sizes.shape}")
-        # pixel per roi
 
         # apply mean mask
         for idx, roi in enumerate(rois):
