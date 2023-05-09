@@ -40,43 +40,32 @@ def main(inputpath: str, roizipfilepath : str, outputfilename: str):
     # mask for one RGB channel
     mask = np.zeros(image0.shape[:2], dtype=np.uint8)
     print(f"mask: {type(mask)}, {mask.dtype}, {mask.shape}")
-    label_img = np.zeros(image0.shape[:2], dtype=np.uint8)
-    print(f"label_img: {type(label_img)} {label_img.dtype}, {label_img.shape}")
+    print(f"mask shape {mask.shape[:2]}")
 
     for idx, roi in enumerate(rois):
         if __debug__:
             print(roi.name, roi.top, roi.bottom, roi.left, roi.right, roi.roitype, roi.subtype, roi.options, roi.version, roi.props, roi.position)
 #            print(roi)
 
-        xc = np.uint16(roi.top + (roi.bottom - roi.top) / 2)
-        yc = np.uint16(roi.left + (roi.right - roi.left) / 2)
-        radius = 13
+        yc = np.uint16(roi.top + (roi.bottom - roi.top) / 2)
+        xc = np.uint16(roi.left + (roi.right - roi.left) / 2)
+        x_axis_length = int((roi.right - roi.left)/2.0)
+        y_axis_length = int((roi.bottom - roi.top)/2.0)
 
-        # create boolean mask and identify labels in next step, or create label image directly here
-        # add roi to mask file
-        mask = cv.circle(mask, (yc, xc), radius, True, -1)
-        print(f"mask: {type(mask)}, {mask.dtype}, {mask.shape}")
-        label_img = cv.circle(label_img, (yc, xc), radius, idx + 1, -1)
-#        imgplot = plt.imshow(mask)
-#        plt.show()
+        label_id = idx + 1
+        mask = cv.ellipse(mask, (xc, yc), [x_axis_length, y_axis_length], angle=0, startAngle=0, endAngle=360, color=label_id, thickness=-1)
+
+    # how many regions?
+    nb_labels = len(rois)
+    label_ids = np.arange(1, nb_labels + 1) # range(1, nb_labels + 1)
+    print(f"labels: {nb_labels}")
+
+    sizes = ndimage.sum_labels(mask, mask, range(nb_labels + 1))
+    print(f"number of pixels per roi: {sizes}")
 
     plt.imshow(mask)
     plt.show()
-    plt.imshow(label_img)
-    plt.show()
 
-    # auto label
-    auto_label_im, nb_labels = ndimage.label(mask)
-    lbls = np.arange(1, nb_labels + 1) # range(1, nb_labels + 1)
-    print(f"auto_label_im: {type(auto_label_im)} {auto_label_im.dtype}, {auto_label_im.shape}")
-    plt.imshow(auto_label_im)
-    plt.show()
-
-    print(f"label img shape {label_img.shape[:2]}")
-    print(f"labels: {nb_labels}")  # how many regions?
-
-    sizes = ndimage.sum(mask, label_img, range(nb_labels + 1))
-    print(f"pixel per roi: {sizes}")
 
     for idx, filename in enumerate(file_names):  # TODO use only last images in cycle
 
@@ -115,13 +104,15 @@ def main(inputpath: str, roizipfilepath : str, outputfilename: str):
         # apply mean mask
         for idx, roi in enumerate(rois):
             i = 0
-            for rgb in image[label_img == idx + 1]:
+            for rgb in image[mask == idx + 1]:
 
                 dict_entry = {
                     'spot': roi.name.lstrip('spot'), 'cycle': file_info_cy, 'TS': file_info_ts, 'WL': file_info_wl,
                     'i':i, 'R': rgb[0], 'G': rgb[1], 'B': rgb[2],
                 }
                 i += 1
+                if i > 500:
+                    break
 #                print(dict_entry)
 
                 rows_list.append(dict_entry)
