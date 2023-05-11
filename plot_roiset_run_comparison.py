@@ -96,19 +96,18 @@ if __name__ == '__main__':
     if test:
         excitations = [590, 645]
         image_channels = ['R', 'G']
-        fig = make_subplots(
-            rows=4, cols=4,
-        )
     else:
         excitations = [445, 525, 590, 645] # 365
         image_channels = ['R', 'G', 'B']
-        fig = make_subplots(
-#            shared_yaxes=True,
-#            shared_yaxes='all',
-            rows=len(spots), cols=15,
-        )
+
     channels = list(product(image_channels, excitations))
-    print(channels)
+    print(len(channels), "channels: ", channels)
+
+    fig = make_subplots(
+#        shared_yaxes=True,
+#        shared_yaxes='all',
+        rows=len(spots), cols=len(channels),  # e.g. 9x15
+    )
 
 
     line_colors = ['red', 'green', 'blue', 'black']
@@ -159,7 +158,7 @@ if __name__ == '__main__':
 
     print(f"Writing {outputfilename}")
 
-#    fig.write_image(outputfilename.replace(".csv", ".svg"))
+#    fig.write_image(outputfilename.replace(".png", ".svg"))
     fig.write_image(outputfilename, scale=1.5)
 
     if show_graph:
