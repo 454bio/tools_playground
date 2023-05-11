@@ -19,7 +19,7 @@ from common import *
 im1=2
 im5=6
 
-def main(inputpath: str, roizipfilepath : str, outputfilename: str):
+def main(inputpath: str, roizipfilepath : str, outputfilename: str, max_number_of_pixel_per_spot : int):
 
     df_files = get_cycle_files(inputpath)
     print(df_files)
@@ -91,7 +91,9 @@ def main(inputpath: str, roizipfilepath : str, outputfilename: str):
 
         # apply mean mask
         for idx, roi in enumerate(rois):
-            i = 0
+            i = -1
+            ratio = (sizes[idx+1] // max_number_of_pixel_per_spot)+1
+
             for rgb in image[mask == idx + 1]:
 
                 dict_entry = {
@@ -99,8 +101,8 @@ def main(inputpath: str, roizipfilepath : str, outputfilename: str):
                     'i':i, 'R': rgb[0], 'G': rgb[1], 'B': rgb[2],
                 }
                 i += 1
-                if i > 500:
-                    break
+                if i % ratio != 0:
+                    continue
 #                print(dict_entry)
 
                 rows_list.append(dict_entry)
@@ -145,6 +147,14 @@ if __name__ == '__main__':
         help="roiset zipfile"
     )
 
+    parser.add_argument(
+        "-p", action='store',
+        type=int,
+        dest='max_number_of_pixel_per_spot',
+        default=5000,
+        help="Maximum number of pixel per spot in the csv file"
+    )
+
     args = parser.parse_args()
     inputpath = args.input
     print(f"inputpath: {inputpath}")
@@ -155,7 +165,9 @@ if __name__ == '__main__':
     roizipfilepath = args.roizipfilepath
     print(f"roizipfilepath: {roizipfilepath}")
 
+    max_number_of_pixel_per_spot = args.max_number_of_pixel_per_spot
+
     # main
-    main(inputpath, roizipfilepath, outputfilename)
+    main(inputpath, roizipfilepath, outputfilename, max_number_of_pixel_per_spot)
 
 
