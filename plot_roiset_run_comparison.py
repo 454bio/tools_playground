@@ -86,6 +86,13 @@ if __name__ == '__main__':
 
     dfs = [pd.read_csv(run) for run in runs]
 
+    spots = set(dfs[0]['spot'].unique())
+    for df in dfs[1:]:
+        spots = spots.intersection(set(df['spot'].unique()))
+    spots = sorted(list(spots))
+    print(f"spots: {len(spots)}, {spots}")
+
+
     if test:
         excitations = [590, 645]
         image_channels = ['R', 'G']
@@ -98,15 +105,11 @@ if __name__ == '__main__':
         fig = make_subplots(
 #            shared_yaxes=True,
 #            shared_yaxes='all',
-            rows=9, cols=15,
+            rows=len(spots), cols=15,
         )
     channels = list(product(image_channels, excitations))
     print(channels)
 
-    spots = set(dfs[0]['spot'].unique())
-    for df in dfs[1:]:
-        spots = spots.intersection(set(df['spot'].unique()))
-    spots = sorted(list(spots))
 
     line_colors = ['red', 'green', 'blue', 'black']
 
