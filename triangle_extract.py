@@ -62,7 +62,7 @@ def main(inputpath: str, roizipfilepath : str, outputfilename: str):
     label_ids = np.arange(1, nb_labels + 1) # range(1, nb_labels + 1)
     print(f"labels: {nb_labels}")
 
-    sizes = ndimage.sum_labels(mask, mask, range(nb_labels + 1))
+    sizes = ndimage.sum_labels(np.ones(mask.shape), mask, range(nb_labels + 1)).astype(int)
     print(f"number of pixels per roi: {sizes}")
 
     plt.imshow(mask)
