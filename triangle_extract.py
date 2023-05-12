@@ -119,6 +119,8 @@ def main(inputpath: str, roizipfilepath: str, outputfilename: str, max_number_of
             dict_entry = {
                 'spot': rois[roi_index].name.lstrip('spot'),
                 'pixel_i': label_counter_in_subset[label],
+                'r': r,
+                'c': c,
                 'timestamp_ms': images[645]['timestamp_ms'],  # slightly inaccurate
                 'cycle': images[645]['cycle']  # should be correct
             }
@@ -133,6 +135,8 @@ def main(inputpath: str, roizipfilepath: str, outputfilename: str, max_number_of
                 dict_entry = {
                     'spot': rois[roi_index].name.lstrip('spot'),
                     'pixel_i': label_counter_in_subset[label],
+                    'r': r,
+                    'c': c,
                     'cycle': images[wl]['cycle'],
                     'timestamp_ms': images[wl]['timestamp_ms'],
                     'WL': wl,

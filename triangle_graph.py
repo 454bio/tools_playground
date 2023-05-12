@@ -157,7 +157,7 @@ if __name__ == '__main__':
                     go.Scatter(
                         x=df_spot[x_channel],
                         y=df_spot[y_channel],
-                        text=df_spot['pixel_i'],
+                        text='#' + df_spot['pixel_i'].astype(str) + '_y' + df_spot['r'].astype(str) + '_x' + df_spot['c'].astype(str),
                         marker_color=spot_colors[sidx],
                         #marker_color=colormap[s],
                         marker=dict(size=2), mode='markers',
