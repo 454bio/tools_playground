@@ -129,6 +129,16 @@ if __name__ == '__main__':
     unique_spots = df['spot'].unique()  # [:5] # TODO
     print(unique_spots)
 
+    # custom
+    use_custom_max_intensity_map = False
+    custom_max_intensity = {
+        'R365': 10000, 'G365': 10000, 'B365': 10000,
+        'R445': 10000, 'G445': 12000, 'B445': 10000,
+        'R525': 25000, 'G525': 60000, 'B525': 15000,
+        'R590': 30000, 'G590': 25000, 'B590': 10000,
+        'R645': 35000, 'G645': 15000, 'B645': 10000,
+    }
+
     for r, tupy in enumerate(channels):
         print()
         for c, tupx in enumerate(channels):
@@ -151,7 +161,7 @@ if __name__ == '__main__':
                         marker_color=spot_colors[sidx],
                         #marker_color=colormap[s],
                         marker=dict(size=2), mode='markers',
-                        name='S' + str(s) + '_' + y_channel + '_' + x_channel
+                        name=str(s) + '_' + y_channel + '_' + x_channel
                     ),
                     row=r + 1, col=c + 1
                 )
@@ -160,8 +170,12 @@ if __name__ == '__main__':
                 fig.update_yaxes(title_text=y_channel, row=r + 1, col=c + 1)
             if r == len(channels) - 1:
                 fig.update_xaxes(title_text=x_channel, row=r + 1, col=c + 1)
-            fig.update_xaxes(range=[4000, max(df[x_channel])], row=r + 1, col=c + 1)
-            fig.update_yaxes(range=[4000, max(df[y_channel])], row=r + 1, col=c + 1)
+            if use_custom_max_intensity_map:
+                fig.update_xaxes(range=[4000, custom_max_intensity[x_channel]], row=r + 1, col=c + 1)
+                fig.update_yaxes(range=[4000, custom_max_intensity[y_channel]], row=r + 1, col=c + 1)
+            else:
+                fig.update_xaxes(range=[4000, max(df[x_channel])], row=r + 1, col=c + 1)
+                fig.update_yaxes(range=[4000, max(df[y_channel])], row=r + 1, col=c + 1)
 #            print(f"max x {x_channel} : {max(df_spot[x_channel])}, max y {y_channel} : {max(df_spot[y_channel])}")
 
 #    fig.update_xaxes(range=[4000, max(df_spot[x_channel])])
