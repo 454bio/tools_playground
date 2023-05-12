@@ -12,14 +12,16 @@ import pathlib
 
 from common import *
 
+'''
+Extracts pixel data for each spot.
+Produces a compact csv file format, but the timestamps are slightly inaccurate, they are taken from the 645 image.
+'''
+
 # TODO, subtract 4096?
-#S0 background, S1: S2: S3: S4:   S5 scatter
 
-# # TODO use last few images in cycle
-im1=2
-im5=6
+new_format = 1
 
-def main(inputpath: str, roizipfilepath : str, outputfilename: str, max_number_of_pixel_per_spot : int):
+def main(inputpath: str, roizipfilepath: str, outputfilename: str, max_number_of_pixel_per_spot: int, image_number: int):
 
     df_files = get_cycle_files(inputpath)
     print(df_files)
@@ -68,10 +70,10 @@ def main(inputpath: str, roizipfilepath : str, outputfilename: str, max_number_o
     plt.imshow(mask)
     plt.show()
 
-    # filter df
-    df_files = df_files[1:6]
+    images = {}
 
-
+    # filter df, use the 5 images starting from the provided image number
+    df_files = df_files.loc[(df_files['file_info_nb'] >= image_number) & (df_files['file_info_nb'] < image_number+5)]
 
     for index, row in df_files.iterrows():
 
@@ -88,29 +90,61 @@ def main(inputpath: str, roizipfilepath : str, outputfilename: str, max_number_o
         image = cv.imread(filenamepath, cv.IMREAD_UNCHANGED)[:, :, ::-1]  # BGR to RGB, 16bit data
 #        image[image<4096]=4096
 #        image -= 4096
+        images[file_info_wl] = {'image': image, 'cycle': int(file_info_cy), 'timestamp_ms': file_info_ts}
 
-        # apply mean mask
-        for idx, roi in enumerate(rois):
-            i = -1
-            ratio = (sizes[idx+1] // max_number_of_pixel_per_spot)+1
 
-            for rgb in image[mask == idx + 1]:
+    label_counter = [-1]*(nb_labels+1) # +1 for 0 background
+    label_counter_in_subset = [-1]*(nb_labels+1) # +1 for 0 background
 
+    ratio = (sizes // max_number_of_pixel_per_spot)+1
+    print(sizes)
+    print(ratio)
+
+    for r, c in np.ndindex(mask.shape):
+
+        label = mask[r, c]
+        if label == 0:  # no spot
+            continue
+
+        label_counter[label] += 1
+
+        if label_counter[label] % ratio[label] != 0:
+            continue
+
+        label_counter_in_subset[label] += 1
+
+        roi_index = label - 1
+
+        if new_format:
+            dict_entry = {
+                'spot': rois[roi_index].name.lstrip('spot'),
+                'pixel_i': label_counter_in_subset[label],
+                'timestamp_ms': images[645]['timestamp_ms'],  # slightly inaccurate
+                'cycle': images[645]['cycle']  # should be correct
+            }
+            for wl in [365, 445, 525, 590, 645]:
+                for i, color in enumerate(['R', 'G', 'B']):
+                    dict_entry[color+str(wl)] = images[wl]['image'][r][c][i]
+
+            rows_list.append(dict_entry)
+
+        else:
+            for wl in [365, 445, 525, 590, 645]:
                 dict_entry = {
-                    'spot': roi.name.lstrip('spot'), 'cycle': file_info_cy, 'TS': file_info_ts, 'WL': file_info_wl,
-                    'i':i, 'R': rgb[0], 'G': rgb[1], 'B': rgb[2],
+                    'spot': rois[roi_index].name.lstrip('spot'),
+                    'pixel_i': label_counter_in_subset[label],
+                    'cycle': images[wl]['cycle'],
+                    'timestamp_ms': images[wl]['timestamp_ms'],
+                    'WL': wl,
                 }
-                i += 1
-                if i % ratio != 0:
-                    continue
-#                print(dict_entry)
+                for i, color in enumerate(['R', 'G', 'B']):
+                    dict_entry[color] = images[wl]['image'][r][c][i]
 
                 rows_list.append(dict_entry)
 
-
     # create final dataframe
     df = pd.DataFrame(rows_list)
-    df.sort_values(by=['spot','cycle', 'TS'], inplace=True)
+    df.sort_values(by=['spot', 'cycle', 'timestamp_ms'], inplace=True)
     print(f"Writing {outputfilename}")
     df.to_csv(outputfilename, index=False)
 #    print(df.to_csv(index=False))
@@ -120,7 +154,6 @@ def main(inputpath: str, roizipfilepath : str, outputfilename: str, max_number_o
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(
-        prog='ProgramName',
         description='Extracts pixel data',
         epilog='help'
     )
@@ -155,6 +188,14 @@ if __name__ == '__main__':
         help="Maximum number of pixel per spot in the csv file"
     )
 
+    parser.add_argument(
+        "-s", action='store',
+        required=True,
+        type=int,
+        dest='start_645_image_number',
+        help="image number of 645 image, 5 images will be used"
+    )
+
     args = parser.parse_args()
     inputpath = args.input
     print(f"inputpath: {inputpath}")
@@ -166,8 +207,12 @@ if __name__ == '__main__':
     print(f"roizipfilepath: {roizipfilepath}")
 
     max_number_of_pixel_per_spot = args.max_number_of_pixel_per_spot
+    print(f"max_number_of_pixel_per_spot: {max_number_of_pixel_per_spot}")
+
+    image_number = args.start_645_image_number
+    print(f"image_number: {image_number}")
 
     # main
-    main(inputpath, roizipfilepath, outputfilename, max_number_of_pixel_per_spot)
+    main(inputpath, roizipfilepath, outputfilename, max_number_of_pixel_per_spot, image_number)
 
 

@@ -26,3 +26,9 @@ plot_roiset_run_comparison.py -i S0096.csv S0097.csv S0098.csv S0099.csv -o orig
 
 plot_roiset_run_comparison.py -i S0096.csv S0097.csv S0098.csv S0099.csv -o normalized.jpg -n
 
+
+
+
+
+triangle_extract.py -i . -r RoiSet5.zip -o RoiSet5.csv -s 40 -p 4
+triangle_graph.py -i RoiSet5.csv -o triangle.png -g -m 20 33.3 12
