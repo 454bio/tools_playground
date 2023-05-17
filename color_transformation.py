@@ -60,20 +60,24 @@ def calculate_and_apply_transformation(df: pd.DataFrame, roizipfilepath: str):
     # only look at these spots
 #    df = df[df.spot.isin(["D1", "D2", "D3", "D4", "L0"])]
 
-    bases = [ "BG", "S1", "S2", "S3", "S4"]  # dyes
-    df = df[df.spot.isin(bases)]
+    dye_bases = ["S1", "S2", "S3", "S4"]
+    df = df[df.spot.isin(dye_bases)]
 
     n_features = 15
-    n_targets = len(bases)
+    n_targets = len(dye_bases)
 
     offset = 4096
     BG_threshold = 25500
     SC_threshold = 64000*4
 
-    unique_base_spots = df['spot'].unique()
-    spot_to_index_map = {spot: idx for idx, spot in enumerate(unique_base_spots)}
-    print("spots:", unique_base_spots)
-    print(spot_to_index_map)
+    unique_df_spots = df['spot'].unique()
+    print("spots:", unique_df_spots)
+    # make sure all dye_bases are in the spots_ist
+
+    print("dye_bases:", dye_bases)
+
+    dye_spot_to_index_map = {dye_spot: idx for idx, dye_spot in enumerate(dye_bases)}
+    print(dye_spot_to_index_map)
 
     # intensity data
     X = df.iloc[:, -n_features:].to_numpy()
@@ -99,10 +103,10 @@ def calculate_and_apply_transformation(df: pd.DataFrame, roizipfilepath: str):
     # Y is a 2D matrix
     Y = np.zeros((len(df), n_targets))
     for i, base_spotname in enumerate(df['spot']):
-        if base_spotname == "BG":
-            Y[i, spot_to_index_map[base_spotname]] = 0
-        else:
-            Y[i, spot_to_index_map[base_spotname]] = 1
+        if base_spotname != "BG":
+            Y[i, dye_spot_to_index_map[base_spotname]] = 1
+#        else:
+            #map to zero
 
     print(Y)
 
@@ -135,7 +139,7 @@ def calculate_and_apply_transformation(df: pd.DataFrame, roizipfilepath: str):
     nb_cycles = max(df_files['cycle'])
     print("cycles:", nb_cycles)
 
-    for cycle in range(1, 11): # TODO nb_cycles
+    for cycle in range(1, nb_cycles):
         lst = []
 
         print("Apply transformation matrix on:")
@@ -203,7 +207,7 @@ def calculate_and_apply_transformation(df: pd.DataFrame, roizipfilepath: str):
                 'cycle': cycle,
             }
             # base vector coefficients
-            for i, base_spot_name in enumerate(unique_base_spots):
+            for i, base_spot_name in enumerate(dye_bases):
                 dict_entry[base_spot_name] = mean_list[i][j]
             rows_list.append(dict_entry)
 
@@ -241,6 +245,7 @@ def calculate_and_apply_transformation(df: pd.DataFrame, roizipfilepath: str):
 
 #    plt.show()
 
+        cv.imwrite(str(i)+'_gray.png', (img+1)*100)
 
         mask = np.zeros(A.shape[:2], dtype=np.uint8)
         print(f"mask: {type(mask)}, {mask.dtype}, {mask.shape}")
@@ -287,6 +292,20 @@ def calculate_and_apply_transformation(df: pd.DataFrame, roizipfilepath: str):
     plt.show()
 
 
+    # A488  Green   G
+    # A532  Yellow  C
+    # CF594 Orange  A
+    # A647N Red     T
+
+    colormap = {
+        'B0': 'black', # background
+        'BG': 'black', # background
+        'SC': 'pink', # scatter
+        'S1': 'green',   # 488  G
+        'S2': 'yellow',  # 532  C
+        'S3': 'orange',  # 594  A
+        'S4': 'red',     # 647  T
+    }
 
     fig = make_subplots(
         rows=4, cols=4
@@ -311,28 +330,16 @@ def calculate_and_apply_transformation(df: pd.DataFrame, roizipfilepath: str):
     )
     '''
 
-    # A488  Green   G
-    # A532  Yellow  C
-    # CF594 Orange  A
-    # A647N Red     T
-
-    colormap = {
-        'B0': 'black', # background
-        'BG': 'black', # background
-        'SC': 'pink', # scatter
-        'S1': 'green',   # 488  G
-        'S2': 'yellow',  # 532  C
-        'S3': 'orange',  # 594  A
-        'S4': 'red',     # 647  T
-    }
-
     for i, oligo_spotname in enumerate(df['spot'].unique()):
 
+        r = (i // 4)+1
+        c = (i % 4)+1
+
         df_spot = df.loc[(df['spot'] == oligo_spotname)]
-        print(f"oligo spot: {i} , {oligo_spotname}  row={(i // 4)+1}, col={(i % 4)+1}")
+        print(f"oligo spot: {i} , {oligo_spotname}  row={r}, col={c}")
 
         # Add traces
-        for base_spot_name in unique_base_spots:
+        for base_spot_name in dye_bases:
             fig.add_trace(
                 # Scatter, Bar
                 go.Bar(
@@ -341,14 +348,16 @@ def calculate_and_apply_transformation(df: pd.DataFrame, roizipfilepath: str):
                     name=base_spot_name,
                     marker_color=colormap[base_spot_name],
                 ),
-                row=(i // 4)+1, col=(i % 4)+1
+                row=r, col=c
             )
-            fig.update_xaxes(title_text=oligo_spotname, row=(i // 4)+1, col=(i % 4)+1)
+            fig.update_xaxes(title_text=oligo_spotname, row=r, col=c)
+
+        fig.update_yaxes(range=[-0.1, 1.0], row=r, col=c)
 
     fig.update_layout(height=3000, width=3000,
                       title_text="Basecalls")
 
-    fig.write_image("test2.png", scale=1.5)
+    fig.write_image("test_bar.png", scale=1.5)
 
     '''
     print(np.ones(df_spot.shape[0]) * 3)
