@@ -102,15 +102,17 @@ if __name__ == '__main__':
                 df['M'+str(exc)] = p['R']*df['R'+str(exc)] + p['G']*df['G'+str(exc)] + p['B']*df['B'+str(exc)]
 
     channels = list(product(image_channels, excitations))
-#    channels = [('G', 525), ('G', 590), ('G', 645), ('B', 365), ('B', 445), ('B', 525), ('B', 590), ('B', 645)]
+#    channels = [('G', 445), ('G', 525), ('R', 590), ('R', 645)]
     print(len(channels), "channels: ", channels)
 
     fig = make_subplots(
-        rows=len(channels), cols=len(channels),  # e.g. 15x15
+        rows=len(channels)-1, cols=len(channels)-1,  # e.g. 15x15
     )
 
-    spot_colors = ['red', 'orange', 'green', 'black', 'blue', 'brown', 'white', 'black', 'magenta']
-    #    colormap = {41:0, 21:1, 31:2, 51:3, 63:4}
+    spot_colors = [
+        'red', 'orange', 'green', 'black', 'blue', 'brown', 'black', 'magenta', 'red', 'brown', 'lightblue',
+        'sandybrown', 'blue', 'brown', 'black', 'magenta', 'red', 'brown', 'lightblue', 'sandybrown',
+        'blue', 'brown', 'black', 'magenta', 'red', 'brown', 'lightblue', 'sandybrown']
     colormap = {
         'S0': 'black', # background
         'S1': 'green', # 488
@@ -142,7 +144,7 @@ if __name__ == '__main__':
     for r, tupy in enumerate(channels):
         print()
         for c, tupx in enumerate(channels):
-            if c > r:
+            if c >= r:
                 continue
             print(tupy, tupx, end=" ", flush=True)
 
@@ -163,19 +165,19 @@ if __name__ == '__main__':
                         marker=dict(size=2), mode='markers',
                         name=str(s) + '_' + y_channel + '_' + x_channel
                     ),
-                    row=r + 1, col=c + 1
+                    row=r, col=c + 1
                 )
 
-            if c == 0:
-                fig.update_yaxes(title_text=y_channel, row=r + 1, col=c + 1)
-            if r == len(channels) - 1:
-                fig.update_xaxes(title_text=x_channel, row=r + 1, col=c + 1)
+#            if c == 0:
+            fig.update_yaxes(title_text=y_channel, row=r, col=c + 1)
+#            if r == len(channels) - 1:
+            fig.update_xaxes(title_text=x_channel, row=r, col=c + 1)
             if use_custom_max_intensity_map:
-                fig.update_xaxes(range=[4000, custom_max_intensity[x_channel]], row=r + 1, col=c + 1)
-                fig.update_yaxes(range=[4000, custom_max_intensity[y_channel]], row=r + 1, col=c + 1)
+                fig.update_xaxes(range=[4000, custom_max_intensity[x_channel]], row=r, col=c + 1)
+                fig.update_yaxes(range=[4000, custom_max_intensity[y_channel]], row=r, col=c + 1)
             else:
-                fig.update_xaxes(range=[4000, max(df[x_channel])], row=r + 1, col=c + 1)
-                fig.update_yaxes(range=[4000, max(df[y_channel])], row=r + 1, col=c + 1)
+                fig.update_xaxes(range=[4000, max(df[x_channel])], row=r, col=c + 1)
+                fig.update_yaxes(range=[4000, max(df[y_channel])], row=r, col=c + 1)
 #            print(f"max x {x_channel} : {max(df_spot[x_channel])}, max y {y_channel} : {max(df_spot[y_channel])}")
 
 #    fig.update_xaxes(range=[4000, max(df_spot[x_channel])])
