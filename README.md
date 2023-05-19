@@ -31,4 +31,12 @@ plot_roiset_run_comparison.py -i S0096.csv S0097.csv S0098.csv S0099.csv -o norm
 
 
 triangle_extract.py -i . -r RoiSet5.zip -o RoiSet5.csv -s 40 -p 4
+
 triangle_graph.py -i RoiSet5.csv -o triangle.png -g -m 20 33.3 12
+
+
+color_transformation.py \
+     -i /mnt/nas_share/GoogleData/InstrumentData/MK27_02/20230517_1458_S0115_0001/raws \
+     -r /mnt/nas_share/GoogleData/InstrumentData/MK27_02/20230517_1458_S0115_0001/analysis/RoiSetJRC4_28spotsACGT.zip \
+     -s /mnt/nas_share/GoogleData/InstrumentData/MK27_02/20230517_1458_S0115_0001/analysis/roi_pixel_data.csv \
+     -o /tmp/a

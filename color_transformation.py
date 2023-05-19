@@ -1,16 +1,20 @@
+#!/usr/bin/env python
+
+import argparse
 import pandas as pd
 import numpy as np
 from sklearn import linear_model
 import cv2 as cv
-from common import *
 import matplotlib.pyplot as plt
 import matplotlib.colors
 from scipy import ndimage
 import roifile
-
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from plotly.graph_objs.layout import YAxis, XAxis, Margin
+
+from common import *
+
 '''
 
 '''
@@ -46,7 +50,7 @@ def get_roi_mask(shape, rois):
     return [mask, nb_labels]
 
 
-def calculate_and_apply_transformation(df: pd.DataFrame, roizipfilepath: str):
+def calculate_and_apply_transformation(df: pd.DataFrame, roizipfilepath: str, input_directory_path : str, output_directory_path : str):
 
     '''
         spot  pixel_i  timestamp_ms  cycle  R365  ...   G590   B590   R645   G645   B645
@@ -85,7 +89,6 @@ def calculate_and_apply_transformation(df: pd.DataFrame, roizipfilepath: str):
     # camera offset correction
     X[X<offset]=offset
     X -= offset
-
 
     print("Datamatrix dimension:", X.shape)
 
@@ -127,9 +130,8 @@ def calculate_and_apply_transformation(df: pd.DataFrame, roizipfilepath: str):
 
     # apply matrix to each cycle
 
-    df_files = get_cycle_files(inputpath)
+    df_files = get_cycle_files(input_directory_path)
     print(df_files)
-#    first_files = df_files.loc[(df_files['file_info_nb'] >= image_number_645) & (df_files['file_info_nb'] < image_number_645+5)]
 
     rois = roifile.ImagejRoi.fromfile(roizipfilepath)
     print(rois)
@@ -245,7 +247,8 @@ def calculate_and_apply_transformation(df: pd.DataFrame, roizipfilepath: str):
 
 #    plt.show()
 
-        cv.imwrite(str(i)+'_gray.png', (img+1)*100)
+        cv.imwrite(os.path.join(output_directory_path, str(i)+'_gray.png'), (img+1)*100)
+        cv.imwrite(os.path.join(output_directory_path, str(i)+'_gray.tif'), img)
 
         mask = np.zeros(A.shape[:2], dtype=np.uint8)
         print(f"mask: {type(mask)}, {mask.dtype}, {mask.shape}")
@@ -266,12 +269,6 @@ def calculate_and_apply_transformation(df: pd.DataFrame, roizipfilepath: str):
     print(counts)
 
 
-    # A488  Green   G
-    # A532  Orange  C
-    # CF594 Yellow  A
-    # A647N Red     T
-    #       Black   -
-
     # {'B000': 0, 'D488': 1, 'D532': 2, 'D594': 3, 'D647': 4, 'S000': 5}
     colors = ['green', 'yellow', 'orange', 'red', '#000000', 'blue', 'magenta']
     scale = [0, 1, 2, 3, 4, 5, 6, 250]
@@ -291,15 +288,9 @@ def calculate_and_apply_transformation(df: pd.DataFrame, roizipfilepath: str):
 #    plt.imshow(mask, aspect="auto", cmap=cmap, norm=norm)
     plt.show()
 
-
-    # A488  Green   G
-    # A532  Yellow  C
-    # CF594 Orange  A
-    # A647N Red     T
-
     colormap = {
-        'BG': 'black', # background
-        'SC': 'pink', # scatter
+        'BG': 'black',  # background
+        'SC': 'pink',   # scatter
         'G': 'green',   # 488
         'C': 'yellow',  # 532
         'A': 'orange',  # 594
@@ -370,10 +361,7 @@ def calculate_and_apply_transformation(df: pd.DataFrame, roizipfilepath: str):
             go.Scatter(
                 x=df_spot['cycle'],
                 y=df_spot['G']/1000000+1,
-#                text=df_spot[dye_bases].idxmax(axis=1).apply(lambda x: basemap[x]), # column with highest value
                 text=df_spot[dye_bases].idxmax(axis=1),  # column with highest value
-                #                text=df_spot[dye_bases].apply(lambda x: x.argmax(), axis=1), # column with highest value
-#                text=df_spot[dye_bases].apply(lambda x: x.argmax(), axis=1), # column with highest value
                 marker_color="black",
                 mode="text",
                 textposition="top center",
@@ -392,157 +380,84 @@ def calculate_and_apply_transformation(df: pd.DataFrame, roizipfilepath: str):
         fig.update_yaxes(range=[-0.2, 1.2], row=r, col=c)
 
     fig.update_layout(height=3000, width=3000,
-                      title_text=inputpath)
+                      title_text=input_directory_path)
 
     fig.update_layout(legend=dict(title_font_family="Times New Roman",
                                   font=dict(size=40)
                                   ))
 
-    fig.write_image("test_bar.png", scale=1.5)
-
-    '''
-    print(np.ones(df_spot.shape[0]) * 3)
-    fig.add_trace(
-        go.Scatter(x=('A','G','C','T','A','A','A','A','A','A'),
-                   y=np.ones(df.shape[0]) * 0,
-
-                   name="AGCT", xaxis='x2'),
-    )
-    '''
+    fig.write_image(os.path.join(output_directory_path, "bar.png"), scale=1.5)
 
     fig.show()
 
 
+if __name__ == '__main__':
 
-def example_one_dye():
-    unique_spots = df['spot'].unique()  # [:5] # TODO
-    print(unique_spots)
+    test = 0
 
-    offset = 4096
-    #offset = 0
+    if not test:
+        parser = argparse.ArgumentParser(
+            description='What the program does',
+            epilog='Text at the bottom of help'
+        )
 
-    X = df.iloc[:,-15:].to_numpy()-offset
-    print(type(X))
-    print(X)
+        parser.add_argument(
+            "-i", "--input",
+            required=True,
+            action='store',
+            dest='input_directory_path',
+            help="Input folder with .tif files"
+        )
 
+        parser.add_argument(
+            "-s", "--spot_data",
+            required=True,
+            action='store',
+            dest='spot_data_filename',
+            help="Path to spot_data.csv"
+        )
 
-    # set vector y to 1 or 0
-    y = np.where(df['spot'] == 'D488', 1, 0)
-#        y = np.random.randint(10, size=(2505, 4))
-    print(y)
-    print(y.shape)
-    print(sum(y))
+        parser.add_argument(
+            "-r", "--roi",
+            required=True,
+            action='store',
+            dest='roiset_file_path',
+            help="roiset zipfile"
+        )
 
-    model_ols = linear_model.LinearRegression()
-    reg = model_ols.fit(X, y)
-    print(reg.coef_)
-    coef = model_ols.coef_
-    intercept = model_ols.intercept_
-    print('coef= ', coef)
-    print('intercept= ', intercept)
+        parser.add_argument(
+            "-o", "--output",
+            required=True,
+            action='store',
+    #        type=argparse.FileType('w'),
+            dest='output_directory_path',
+            help="output directory for .png and .csv files"
+        )
 
+        args = parser.parse_args()
+        input_directory_path = args.input_directory_path
+        print(f"input_directory_path: {input_directory_path}")
 
+        output_directory_path = args.output_directory_path
+        print(f"output_directory_path: {output_directory_path}")
+        if not os.path.exists(output_directory_path):
+            print(f"ERROR: output path {output_directory_path} doesn't exist")
+            exit(-1)
 
-    # manual regression
-    print("manual-----------------------------")
-    A = np.ones((2505, 1))
-    print(A.shape, X.shape)
-    X = np.concatenate((A, X), axis=1)
+        roiset_file_path = args.roiset_file_path
+        print(f"roiset_file_path: {roiset_file_path}")
 
-    beta_hat = np.linalg.inv(X.T.dot(X)).dot(X.T).dot(y)
-    print(beta_hat)
+        spot_data_filename = args.spot_data_filename
+        print(f"spot_data_filename: {spot_data_filename}")
 
+    else:
 
+        input_directory_path = ''
+        spot_data_filename = ''
+        roiset_file_path = ''
+        output_directory_path = ''
 
-    newdf = df[ (df['spot']=='D488') & (df['pixel_i']==35) ]
-    print(newdf)
-    v = newdf.iloc[:,-15:].to_numpy()-offset
-    # v = np.array([[   5888,11728,6128,8432,17248,7664,12816,22528,10224,7600,6472,5056,5456,4616,4368  ]])
-    print("automatic prediction-----------------------------")
-    # disable scientif print mode , e.g. -e10
-    np.set_printoptions(suppress=True)
-    a = reg.predict(v)
-    print("predict:", a)
+    df = pd.read_csv(spot_data_filename)
+    print(df)
 
-    print("manual prediction-----------------------------")
-    print("predict:", beta_hat[0] + np.dot(v,beta_hat[1:]))
-
-
-
-
-'''
-/home/domibel/454_Bio/runs/20230506_0911_S0102_0001/raws/00000002_001A_00002_645_C001_000004671.tif
-/home/domibel/454_Bio/runs/20230506_0911_S0102_0001/raws/00000003_001A_00003_590_C001_000005838.tif
-/home/domibel/454_Bio/runs/20230506_0911_S0102_0001/raws/00000004_001A_00004_525_C001_000010385.tif
-/home/domibel/454_Bio/runs/20230506_0911_S0102_0001/raws/00000005_001A_00005_445_C001_000011162.tif
-/home/domibel/454_Bio/runs/20230506_0911_S0102_0001/raws/00000006_001A_00006_365_C001_000014241.tif
-
-~/454_Bio/tools_playground/triangle_extract.py -i . -r ~/454_Bio/runs/S108/RoiSet.zip -o ~/454_Bio/runs/S108/RoiSet.csv -s 27 -p 500
-~/454_Bio/tools_playground/triangle_graph.py -i   ~/454_Bio/runs/S108/RoiSet.csv -o ~/454_Bio/runs/S108/RoiSet.png -g
-
-
-'''
-run = 7
-if run == 1:
-    inputpath = '/home/domibel/454_Bio/runs/20230506_0911_S0102_0001/raws/'
-    spot_data_filename = "/home/domibel/454_Bio/runs/20230506_0911_S0102_0001/raws/out_limit.csv"
-
-if run == 2:
-    inputpath = '/home/domibel/454_Bio/runs/20230510_1517_dye1_test2_0001/raws'
-    #spot_data_filename = '/home/domibel/454_Bio/runs/20230510_1517_dye1_test2_0001/raws/out.csv'
-    spot_data_filename = '/home/domibel/454_Bio/runs/20230510_1517_dye1_test2_0001/raws/out_withBG2.csv'
-    roizipfilepath = "/home/domibel/454_Bio/runs/20230510_1517_dye1_test2_0001/raws/RoiSetOligos.zip"
-
-if run == 3:
-    inputpath = '/home/domibel/454_Bio/runs/20230505_2111_S0101_0001/raws/'
-
-if run == 4:
-    inputpath = '/home/domibel/454_Bio/runs/20230501_1344_S0091_0001/raws/'
-
-if run == 5:
-    inputpath = '/home/domibel/454_Bio/runs/20230419_2037_S0079_0001/raws/'
-
-if run == 6:
-    inputpath = '/mnt/nas_share/GoogleData/InstrumentData/MK27_02/20230510_1731_S0108R_0001/raws/'
-    spot_data_filename = '/home/domibel/454_Bio/runs/S108/RoiSet.csv'
-
-if run == 7:
-    # ~/454_Bio/tools_playground/triangle_extract.py -i . -r RoiSetDomFull.zip -p 1000 -s 27 -o out.csv
-
-    inputpath = '/home/domibel/454_Bio/runs/20230510_1731_S0108R_0001/raws/'
-    #spot_data_filename = '/home/domibel/454_Bio/runs/20230510_1517_dye1_test2_0001/raws/out.csv'
-    spot_data_filename = '/home/domibel/454_Bio/runs/20230510_1731_S0108R_0001/raws/out.csv'
-    roizipfilepath = "/home/domibel/454_Bio/runs/20230510_1731_S0108R_0001/raws/RoiSetDomFull.zip"
-
-    # ~/454_Bio/tools_playground/triangle_extract.py -i ../raws/ -r RoiSet28.zip -p 1000 -s 27 -o outS108.csv
-    spot_data_filename = '/home/domibel/454_Bio/runs/20230510_1731_S0108R_0001/analysis/outS108.csv'
-    roizipfilepath = "/home/domibel/454_Bio/runs/20230510_1731_S0108R_0001/analysis/RoiSet28.zip"
-
-if run == 8:
-    # ~/454_Bio/tools_playground/triangle_extract.py -i . -r ../analysis/RoiSetJRC1.zip -p 1000 -s 7 -o ~/454_Bio/runs/S115/outS115.csv
-
-    inputpath = '/mnt/nas_share/GoogleData/InstrumentData/MK27_02/20230517_1458_S0115_0001/raws/'
-    #spot_data_filename = '/home/domibel/454_Bio/runs/20230510_1517_dye1_test2_0001/raws/out.csv'
-    spot_data_filename = '/home/domibel/454_Bio/runs/S115/outS115.csv'
-    roizipfilepath = "/mnt/nas_share/GoogleData/InstrumentData/MK27_02/20230517_1458_S0115_0001/analysis/RoiSetJRC4_28spotsACGT.zip"
-
-
-df = pd.read_csv(spot_data_filename)
-print(df)
-
-
-#example_one_dye()
-calculate_and_apply_transformation(df, roizipfilepath)
-
-
-'''
-    # random image test
-    R = np.random.rand(3, 2, n_features)*30000
-    print(R)
-    a = reg.predict(R.reshape(6, n_features))
-    print(a)
-    a = a.reshape(3, 2, n_targets)
-    print(a.shape)
-    print(a)
-'''
-
+    calculate_and_apply_transformation(df, roiset_file_path, input_directory_path, output_directory_path)
