@@ -162,8 +162,10 @@ if __name__ == '__main__':
                         text='#' + df_spot['pixel_i'].astype(str) + '_y' + df_spot['r'].astype(str) + '_x' + df_spot['c'].astype(str),
                         marker_color=spot_colors[sidx],
                         #marker_color=colormap[s],
-                        marker=dict(size=2), mode='markers',
-                        name=str(s) + '_' + y_channel + '_' + x_channel
+                        marker=dict(size=2),
+                        mode='markers',
+                        name=str(s),
+                        legendgroup=s, showlegend=(r == 1 and c == 0)
                     ),
                     row=r, col=c + 1
                 )
@@ -184,6 +186,10 @@ if __name__ == '__main__':
 #    fig.update_yaxes(range=[4000, max(df_spot[y_channel])])
     fig.update_layout(height=3000, width=3000,
                       title_text="")
+    fig.update_layout(legend=dict(title_font_family="Times New Roman",
+                                  font=dict(size=40),
+                                  itemsizing='constant'
+                                  ))
 
     plot1 = plot(fig, output_type='div')
 
