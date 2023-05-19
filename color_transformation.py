@@ -60,8 +60,8 @@ def calculate_and_apply_transformation(df: pd.DataFrame, roizipfilepath: str):
     # only look at these spots
 #    df = df[df.spot.isin(["D1", "D2", "D3", "D4", "L0"])]
 
-    dye_bases = ["S1", "S2", "S3", "S4"]
-    df = df[df.spot.isin(dye_bases)]
+    dye_bases = ["G", "C", "A", "T"]
+    df = df[df.spot.isin(dye_bases+['BG'])]
 
     n_features = 15
     n_targets = len(dye_bases)
@@ -298,24 +298,23 @@ def calculate_and_apply_transformation(df: pd.DataFrame, roizipfilepath: str):
     # A647N Red     T
 
     colormap = {
-        'B0': 'black', # background
         'BG': 'black', # background
         'SC': 'pink', # scatter
-        'S1': 'green',   # 488  G
-        'S2': 'yellow',  # 532  C
-        'S3': 'orange',  # 594  A
-        'S4': 'red',     # 647  T
+        'G': 'green',   # 488
+        'C': 'yellow',  # 532
+        'A': 'orange',  # 594
+        'T': 'red',     # 647
     }
 
     fig = make_subplots(
-        rows=4, cols=4
+        rows=7, cols=4
     )
 
     '''
     # Create figure with secondary x-axis
 #    fig = go.Figure(layout=layout)
     layout = go.Layout(
-        title="Basecalls, Spot " + oligo_spotname,
+        title="Basecalls, Spot " + spot_name,
         xaxis=XAxis(
             title="Cycles"
         ),
@@ -330,13 +329,27 @@ def calculate_and_apply_transformation(df: pd.DataFrame, roizipfilepath: str):
     )
     '''
 
-    for i, oligo_spotname in enumerate(df['spot'].unique()):
+    spot_names = list(df['spot'].unique())
+    # fixed order
+    spot_names = [
+        'G', 'C', 'A', 'T',
+        'S1', 'S2', 'S3', 'S4',
+        'S5', 'S6', 'S7', 'S8',
+        'S9', 'S10', 'S11', 'S12',
+        'S13', 'S14', 'S15', 'S16',
+        'S17', 'S18', 'S19', 'S20',
+        'X1', 'X2', 'X3', 'BG'
+    ]
+
+    print(spot_names)
+
+    for i, spot_name in enumerate(spot_names):
 
         r = (i // 4)+1
         c = (i % 4)+1
 
-        df_spot = df.loc[(df['spot'] == oligo_spotname)]
-        print(f"oligo spot: {i} , {oligo_spotname}  row={r}, col={c}")
+        df_spot = df.loc[(df['spot'] == spot_name)]
+        print(f"spot: {i} , {spot_name}  row={r}, col={c}")
 
         # Add traces
         for base_spot_name in dye_bases:
@@ -347,15 +360,43 @@ def calculate_and_apply_transformation(df: pd.DataFrame, roizipfilepath: str):
                     y=df_spot[base_spot_name],
                     name=base_spot_name,
                     marker_color=colormap[base_spot_name],
+                    legendgroup=base_spot_name, showlegend=(i == 0)
                 ),
                 row=r, col=c
             )
-            fig.update_xaxes(title_text=oligo_spotname, row=r, col=c)
 
-        fig.update_yaxes(range=[-0.1, 1.0], row=r, col=c)
+        fig.add_trace(
+            # Scatter, Bar
+            go.Scatter(
+                x=df_spot['cycle'],
+                y=df_spot['G']/1000000+1,
+#                text=df_spot[dye_bases].idxmax(axis=1).apply(lambda x: basemap[x]), # column with highest value
+                text=df_spot[dye_bases].idxmax(axis=1),  # column with highest value
+                #                text=df_spot[dye_bases].apply(lambda x: x.argmax(), axis=1), # column with highest value
+#                text=df_spot[dye_bases].apply(lambda x: x.argmax(), axis=1), # column with highest value
+                marker_color="black",
+                mode="text",
+                textposition="top center",
+                textfont_size=30,
+                showlegend=False
+            ),
+            row=r, col=c
+        )
+
+
+        fig.update_xaxes(
+            title_text=spot_name,
+            title_font={"size": 24},
+            row=r, col=c)
+
+        fig.update_yaxes(range=[-0.2, 1.2], row=r, col=c)
 
     fig.update_layout(height=3000, width=3000,
-                      title_text="Basecalls")
+                      title_text=inputpath)
+
+    fig.update_layout(legend=dict(title_font_family="Times New Roman",
+                                  font=dict(size=40)
+                                  ))
 
     fig.write_image("test_bar.png", scale=1.5)
 
@@ -441,7 +482,7 @@ def example_one_dye():
 
 
 '''
-run = 2
+run = 7
 if run == 1:
     inputpath = '/home/domibel/454_Bio/runs/20230506_0911_S0102_0001/raws/'
     spot_data_filename = "/home/domibel/454_Bio/runs/20230506_0911_S0102_0001/raws/out_limit.csv"
@@ -464,6 +505,26 @@ if run == 5:
 if run == 6:
     inputpath = '/mnt/nas_share/GoogleData/InstrumentData/MK27_02/20230510_1731_S0108R_0001/raws/'
     spot_data_filename = '/home/domibel/454_Bio/runs/S108/RoiSet.csv'
+
+if run == 7:
+    # ~/454_Bio/tools_playground/triangle_extract.py -i . -r RoiSetDomFull.zip -p 1000 -s 27 -o out.csv
+
+    inputpath = '/home/domibel/454_Bio/runs/20230510_1731_S0108R_0001/raws/'
+    #spot_data_filename = '/home/domibel/454_Bio/runs/20230510_1517_dye1_test2_0001/raws/out.csv'
+    spot_data_filename = '/home/domibel/454_Bio/runs/20230510_1731_S0108R_0001/raws/out.csv'
+    roizipfilepath = "/home/domibel/454_Bio/runs/20230510_1731_S0108R_0001/raws/RoiSetDomFull.zip"
+
+    # ~/454_Bio/tools_playground/triangle_extract.py -i ../raws/ -r RoiSet28.zip -p 1000 -s 27 -o outS108.csv
+    spot_data_filename = '/home/domibel/454_Bio/runs/20230510_1731_S0108R_0001/analysis/outS108.csv'
+    roizipfilepath = "/home/domibel/454_Bio/runs/20230510_1731_S0108R_0001/analysis/RoiSet28.zip"
+
+if run == 8:
+    # ~/454_Bio/tools_playground/triangle_extract.py -i . -r ../analysis/RoiSetJRC1.zip -p 1000 -s 7 -o ~/454_Bio/runs/S115/outS115.csv
+
+    inputpath = '/mnt/nas_share/GoogleData/InstrumentData/MK27_02/20230517_1458_S0115_0001/raws/'
+    #spot_data_filename = '/home/domibel/454_Bio/runs/20230510_1517_dye1_test2_0001/raws/out.csv'
+    spot_data_filename = '/home/domibel/454_Bio/runs/S115/outS115.csv'
+    roizipfilepath = "/mnt/nas_share/GoogleData/InstrumentData/MK27_02/20230517_1458_S0115_0001/analysis/RoiSetJRC4_28spotsACGT.zip"
 
 
 df = pd.read_csv(spot_data_filename)
