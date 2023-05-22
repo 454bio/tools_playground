@@ -12,6 +12,7 @@ import roifile
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from plotly.graph_objs.layout import YAxis, XAxis, Margin
+import math
 
 from common import *
 
@@ -140,6 +141,7 @@ def calculate_and_apply_transformation(df: pd.DataFrame, roizipfilepath: str, in
 
     nb_cycles = max(df_files['cycle'])
     print("cycles:", nb_cycles)
+#    nb_cycles = 8
 
     for cycle in range(1, nb_cycles):
         lst = []
@@ -297,9 +299,6 @@ def calculate_and_apply_transformation(df: pd.DataFrame, roizipfilepath: str, in
         'T': 'red',     # 647
     }
 
-    fig = make_subplots(
-        rows=7, cols=4
-    )
 
     '''
     # Create figure with secondary x-axis
@@ -319,9 +318,23 @@ def calculate_and_apply_transformation(df: pd.DataFrame, roizipfilepath: str, in
         ),
     )
     '''
+    unique_spot_names = list(df['spot'].unique())
+    s_list = [a for a in unique_spot_names if a.startswith('S')]
+    s_list.sort(key=lambda x: int(x.strip('S')))
+    x_list = [a for a in unique_spot_names if a.startswith('X')]
+    x_list.sort(key=lambda a: int(a.strip('X')))
 
-    spot_names = list(df['spot'].unique())
+    spot_names = []
+    spot_names.insert(0, unique_spot_names.pop(unique_spot_names.index('G')))
+    spot_names.insert(0, unique_spot_names.pop(unique_spot_names.index('C')))
+    spot_names.insert(0, unique_spot_names.pop(unique_spot_names.index('A')))
+    spot_names.insert(0, unique_spot_names.pop(unique_spot_names.index('T')))
+    spot_names.extend(s_list)
+    spot_names.extend(x_list)
+    spot_names.append(unique_spot_names.pop(unique_spot_names.index('BG')))
+
     # fixed order
+    '''
     spot_names = [
         'G', 'C', 'A', 'T',
         'S1', 'S2', 'S3', 'S4',
@@ -331,13 +344,19 @@ def calculate_and_apply_transformation(df: pd.DataFrame, roizipfilepath: str, in
         'S17', 'S18', 'S19', 'S20',
         'X1', 'X2', 'X3', 'BG'
     ]
+    '''
 
     print(spot_names)
 
+    cols = 4
+    fig = make_subplots(
+        rows=math.ceil(len(spot_names)/cols), cols=cols
+    )
+
     for i, spot_name in enumerate(spot_names):
 
-        r = (i // 4)+1
-        c = (i % 4)+1
+        r = (i // cols)+1
+        c = (i % cols)+1
 
         df_spot = df.loc[(df['spot'] == spot_name)]
         print(f"spot: {i} , {spot_name}  row={r}, col={c}")
@@ -365,7 +384,7 @@ def calculate_and_apply_transformation(df: pd.DataFrame, roizipfilepath: str, in
                 marker_color="black",
                 mode="text",
                 textposition="top center",
-                textfont_size=30,
+                textfont_size=26,
                 showlegend=False
             ),
             row=r, col=c
