@@ -165,9 +165,9 @@ if __name__ == '__main__':
     parser.add_argument(
         "-o", "--output", action='store',
         type=argparse.FileType('w'),
-        dest='output',
-        default='.',
-        help="output folder for spot_pixel.csv"
+        required=True,
+        dest='outputcsv',
+        help="output filename e.g. out.csv"
     )
 
     parser.add_argument(
@@ -204,7 +204,7 @@ if __name__ == '__main__':
     inputpath = args.input
     print(f"inputpath: {inputpath}")
 
-    outputfilename = args.output
+    outputfilename = args.outputcsv
     print(f"outputfilename: {outputfilename}")
 
     roizipfilepath = args.roizipfilepath
