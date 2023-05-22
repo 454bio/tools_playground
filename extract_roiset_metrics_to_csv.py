@@ -105,7 +105,7 @@ def main(inputpath: str, roizipfilepath : str, outputfilename: str):
     df = pd.DataFrame(rows_list)
     df.sort_values(by=['spot','cycle', 'TS'], inplace=True)
     print(f"Writing {outputfilename}")
-    df.to_csv(outputfilename, index=False, line_terminator='\n')
+    df.to_csv(outputfilename, index=False, lineterminator='\n')
 #    print(df.to_csv(index=False))
 
 
