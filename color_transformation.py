@@ -51,7 +51,7 @@ def get_roi_mask(shape, rois):
     return [mask, nb_labels]
 
 
-def calculate_and_apply_transformation(df: pd.DataFrame, roizipfilepath: str, input_directory_path : str, output_directory_path : str):
+def calculate_and_apply_transformation(df: pd.DataFrame, roizipfilepath: str, input_directory_path : str, output_directory_path : str, channel_names : list[str]):
 
     '''
         spot  pixel_i  timestamp_ms  cycle  R365  ...   G590   B590   R645   G645   B645
@@ -68,7 +68,7 @@ def calculate_and_apply_transformation(df: pd.DataFrame, roizipfilepath: str, in
     dye_bases = ["G", "C", "A", "T"]
     df = df[df.spot.isin(dye_bases+['BG'])]
 
-    n_features = 15
+    n_features = len(channel_names)
     n_targets = len(dye_bases)
 
     offset = 4096
@@ -85,10 +85,10 @@ def calculate_and_apply_transformation(df: pd.DataFrame, roizipfilepath: str, in
     print(dye_spot_to_index_map)
 
     # intensity data
-    X = df.iloc[:, -n_features:].to_numpy()
+    X = df[channel_names].to_numpy()
 
     # camera offset correction
-    X[X<offset]=offset
+    X[X < offset] = offset
     X -= offset
 
     print("Datamatrix dimension:", X.shape)
@@ -144,52 +144,39 @@ def calculate_and_apply_transformation(df: pd.DataFrame, roizipfilepath: str, in
 #    nb_cycles = 8
 
     for cycle in range(1, nb_cycles):
-        lst = []
+        image_map = {}
 
         print("Apply transformation matrix on:")
         cyclefilenames = (df_files[df_files['cycle'] == cycle]).tail(5)
         print("c:", cycle, cyclefilenames.to_string())
 
-        for filenamepath in cyclefilenames['filenamepath']:
-            print(filenamepath)
+        for i, cyclefilename in cyclefilenames.iterrows():
+            filenamepath = cyclefilename['filenamepath']
+            wavelength = cyclefilename['wavelength']
+            print("WL:", filenamepath, wavelength)
             image = cv.imread(filenamepath, cv.IMREAD_UNCHANGED)[:, :, ::-1]  # BGR to RGB, 16bit data
 
-            # save offset correction
+            # safe offset correction
             image[image < offset] = offset
             image -= offset
 
-            print(f"imageshape {image.shape}")
-            lst.append(image)
+            print(f"RGB image shap: {image.shape}")
+            image_map['R'+str(wavelength)] = image[:, :, 0]
+            image_map['G'+str(wavelength)] = image[:, :, 1]
+            image_map['B'+str(wavelength)] = image[:, :, 2]
 
+        channels = [image_map[channel_name] for channel_name in channel_names]
 
-        A = np.stack(
-            (
-            lst[4][:, :, 0],  # 365
-            lst[4][:, :, 1],
-            lst[4][:, :, 2],
-            lst[3][:, :, 0],  # 445
-            lst[3][:, :, 1],
-            lst[3][:, :, 2],
-            lst[2][:, :, 0],  # 525
-            lst[2][:, :, 1],
-            lst[2][:, :, 2],
-            lst[1][:, :, 0],  # 590
-            lst[1][:, :, 1],
-            lst[1][:, :, 2],
-            lst[0][:, :, 0],  # 645
-            lst[0][:, :, 1],
-            lst[0][:, :, 2],
-            ), axis=2
-        )
+        A = np.stack(channels, axis=2)
         dim = A.shape
-        print(dim)
+        print(f"Matrix A shape: {dim}")
         assert (n_features == dim[2])
 
         # apply transformation to each pixel, reshape temporarily
         a = reg.predict(A.reshape(dim[0]*dim[1], n_features))
-        print(a.shape)
         # reshape back
         a = a.reshape(dim[0], dim[1], n_targets)
+        print(f"Matrix a shape: {a.shape}")
 
         print("Transformation applied, shape", a.shape, type(a))
 
@@ -416,7 +403,7 @@ if __name__ == '__main__':
 
     if not test:
         parser = argparse.ArgumentParser(
-            description='What the program does',
+            description='Color Transformation',
             epilog='Text at the bottom of help'
         )
 
@@ -453,6 +440,15 @@ if __name__ == '__main__':
             help="output directory for .png and .csv files"
         )
 
+        parser.add_argument(
+            "-c", "--channel_subset",
+            action='store',
+            type=str,
+            nargs='+',
+            dest='channel_subset',
+            help="channel subset e.g. -c G445 G525 R590 B445"
+        )
+
         args = parser.parse_args()
         input_directory_path = args.input_directory_path
         print(f"input_directory_path: {input_directory_path}")
@@ -469,14 +465,29 @@ if __name__ == '__main__':
         spot_data_filename = args.spot_data_filename
         print(f"spot_data_filename: {spot_data_filename}")
 
+
+        if args.channel_subset:
+            assert len(args.channel_subset) >= 2, "Please provide at least 2 channels"
+            for ch in args.channel_subset:
+                pattern = "^[R|G|B](\d{3})$"
+                match = re.search(pattern, ch)
+                if not match:
+                    print(f"{ch} doesn't match format, e.g. R365")
+                    exit(-1)
+
+            channel_names = args.channel_subset
+        else:
+            channel_names = ['R365', 'G365', 'B365', 'R445', 'G445', 'B445', 'R525', 'G525', 'B525', 'R590', 'G590', 'B590', 'R645', 'G645', 'B645']
+
     else:
 
         input_directory_path = ''
         spot_data_filename = ''
         roiset_file_path = ''
         output_directory_path = ''
+        channel_names = ['R365', 'G365', 'B365', 'R445']
 
     df = pd.read_csv(spot_data_filename)
     print(df)
 
-    calculate_and_apply_transformation(df, roiset_file_path, input_directory_path, output_directory_path)
+    calculate_and_apply_transformation(df, roiset_file_path, input_directory_path, output_directory_path, channel_names)

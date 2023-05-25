@@ -59,4 +59,12 @@ color_transformation.py \
      -r /mnt/nas_share/GoogleData/InstrumentData/MK27_02/20230517_1458_S0115_0001/analysis/RoiSetJRC4_28spotsACGT.zip \
      -s /mnt/nas_share/GoogleData/InstrumentData/MK27_02/20230517_1458_S0115_0001/analysis/roi_pixel_data.csv \
      -o /tmp
+
+cd /mnt/nas_share/GoogleData/InstrumentData/MK27_02/20230517_1458_S0115_0001
+color_transformation.py \
+     -i raws \
+     -r analysis/RoiSetJRC4_28spotsACGT.zip \
+     -s analysis/roi_pixel_data.csv \
+     -o /tmp
+     -c G445 G525 R590 B445
 ```
