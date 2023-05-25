@@ -41,6 +41,9 @@ plot_roiset_run_comparison.py -i S0096.csv S0097.csv S0098.csv S0099.csv -o norm
 extract_roiset_pixel_data.py -i . -r RoiSet5.zip -o RoiSet5.csv -s 7 -p 500
 
 triangle_graph.py -i RoiSet5.csv -o triangle.png -g -m 20 33.3 12
+
+triangle_graph.py -i RoiSet5.csv -o triangle.png -g -c G445 G525 R590 B445
+
 ```
 
 
