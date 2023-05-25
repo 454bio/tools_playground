@@ -7,8 +7,7 @@ from plotly.offline import plot
 import pandas as pd
 import pathlib
 from itertools import product
-
-test = 0
+import re
 
 if __name__ == '__main__':
     """    requires multiple pixel for each spot    """
@@ -53,6 +52,15 @@ if __name__ == '__main__':
         help="RGB percentages as float e.g. -m 33.3 25 30.0"
     )
 
+    parser.add_argument(
+        "-c", "--channel_subset",
+        action='store',
+        type=str,
+        nargs='+',
+        dest='channel_subset',
+        help="channel subset e.g. -c G445 G525 R590 B445"
+    )
+
     args = parser.parse_args()
 
     show_graph = args.show_graph
@@ -83,10 +91,16 @@ if __name__ == '__main__':
     df = pd.read_csv(inputfilename)
     print(df)
 
+    if args.channel_subset:
+        assert len(args.channel_subset) >= 2, "Please provide at least 2 channels"
+        for ch in args.channel_subset:
+            pattern = "^[R|G|B](\d{3})$"
+            match = re.search(pattern, ch)
+            if not match:
+                print(f"{ch} doesn't match format, e.g. R365")
+                exit(-1)
 
-    if test:
-        excitations = [590, 645]
-        image_channels = ['R', 'G']
+        channels = args.channel_subset
     else:
         excitations = [365, 445, 525, 590, 645]
         image_channels = ['R', 'G', 'B']
@@ -96,10 +110,11 @@ if __name__ == '__main__':
             # adding mixed columns
             for exc in excitations:
                 # e.g.  df['M365'] = p['R']*df['R365'] + p['G']*df['G365'] + p['B']*df['B365']
-                df['M'+str(exc)] = p['R']*df['R'+str(exc)] + p['G']*df['G'+str(exc)] + p['B']*df['B'+str(exc)]
+                df['M' + str(exc)] = p['R'] * df['R' + str(exc)] + p['G'] * df['G' + str(exc)] + p['B'] * df[
+                    'B' + str(exc)]
 
-    channels = list(product(image_channels, excitations))
-#    channels = [('G', 445), ('G', 525), ('R', 590), ('R', 645)]
+        channels = [a[0]+str(a[1]) for a in product(image_channels, excitations)]
+
     print(len(channels), "channels: ", channels)
 
     fig = make_subplots(
@@ -126,7 +141,7 @@ if __name__ == '__main__':
     }
 
     unique_spots = df['spot'].unique()  # [:5] # TODO
-    print(unique_spots)
+    print(len(unique_spots), "unique_spots: ", unique_spots)
 
     # custom
     use_custom_max_intensity_map = False
@@ -138,15 +153,12 @@ if __name__ == '__main__':
         'R645': 35000, 'G645': 15000, 'B645': 10000,
     }
 
-    for r, tupy in enumerate(channels):
-        print()
-        for c, tupx in enumerate(channels):
+    print(f"Generate triangle subplots:")
+    for r, y_channel in enumerate(channels):
+        for c, x_channel in enumerate(channels):
             if c >= r:
                 continue
-            print(tupy, tupx, end=" ", flush=True)
-
-            x_channel = tupx[0]+str(tupx[1])
-            y_channel = tupy[0]+str(tupy[1])
+            print(f"{y_channel}x{x_channel} ", end=" ", flush=True)
 
             for sidx, s in enumerate(unique_spots):
                 # one spot
@@ -178,6 +190,7 @@ if __name__ == '__main__':
                 fig.update_xaxes(range=[4000, max(df[x_channel])], row=r, col=c + 1)
                 fig.update_yaxes(range=[4000, max(df[y_channel])], row=r, col=c + 1)
 #            print(f"max x {x_channel} : {max(df_spot[x_channel])}, max y {y_channel} : {max(df_spot[y_channel])}")
+        print("-")  # end of row reached
 
 #    fig.update_xaxes(range=[4000, max(df_spot[x_channel])])
 #    fig.update_yaxes(range=[4000, max(df_spot[y_channel])])
@@ -188,9 +201,10 @@ if __name__ == '__main__':
                                   itemsizing='constant'
                                   ))
 
+    print(f"Generate figure ...")
     plot1 = plot(fig, output_type='div')
 
-    print(f"Writing {outputfilename}")
+    print(f"Write {outputfilename} ...")
 
 #    fig.write_image(outputfilename.replace(".png", ".svg"))
     fig.write_image(outputfilename, scale=1.5)
@@ -198,4 +212,4 @@ if __name__ == '__main__':
     if show_graph:
         fig.show()
 
-    print("exit")
+    print("done")
