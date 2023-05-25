@@ -23,9 +23,17 @@ if __name__ == '__main__':
         required=True,
         action='store',
         type=argparse.FileType('r'),
-        dest='input',
-        default='spot_pixel_roiset.csv',
-        help="Input csv file"
+        dest='input_csv',
+        help="Input csv file, e.g. spot_pixel_roiset.csv"
+    )
+
+    parser.add_argument(
+        "-o", "--output",
+        required=True,
+        type=argparse.FileType('w'),
+        action='store',
+        dest='output_image',
+        help="output filename, e.g. plot.jpg"
     )
 
     parser.add_argument(
@@ -37,24 +45,13 @@ if __name__ == '__main__':
     )
 
     parser.add_argument(
-        "-o", "--output",
-        required=True,
-        type=argparse.FileType('w'),
-        action='store',
-        dest='output',
-        default='.',
-        help="output filename, e.g. plot.jpg"
-    )
-
-    parser.add_argument(
         "-m", "--mix",
         action='store',
         type=float,
         nargs='+',
         dest='rgb_mix',
-        help="RGB percentages as float e.g. 33.3%"
+        help="RGB percentages as float e.g. -m 33.3 25 30.0"
     )
-
 
     args = parser.parse_args()
 
@@ -65,18 +62,18 @@ if __name__ == '__main__':
         mix = True
         p = {
             'R': args.rgb_mix[0]/100,
-            'G': args.rgb_mix[0]/100,
+            'G': args.rgb_mix[1]/100,
             'B': args.rgb_mix[2]/100
         }
         print(f'using rgb mix: {p}')
     else:
         mix = False
 
-    inputfilename = args.input.name
-    print(f"inputfilename: {inputfilename}")
+    inputfilename = args.input_csv.name
+    print(f"input_csv filename: {inputfilename}")
 
-    outputfilename = args.output.name
-    print(f"outputfilename: {outputfilename}")
+    outputfilename = args.output_image.name
+    print(f"output_image filename: {outputfilename}")
 
     # check if inputfilename exists
     if not pathlib.Path(inputfilename).is_file():
