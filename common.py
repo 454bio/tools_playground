@@ -3,6 +3,23 @@ import glob
 import re
 import os
 
+default_spot_colors = [
+    'orange',
+    'brown',
+    'magenta',
+    'yellow',
+    'lightblue',
+    'sandybrown'
+]
+
+default_base_color_map = {
+    'A': 'green',
+    'C': 'blue',
+    'T': 'red',
+    'G': 'black',
+    'BG': 'lightgrey'
+}
+
 def get_cycle_files(inputpath: str) -> pd.DataFrame:
 
     file_names = sorted(glob.glob(inputpath + "/*tif", recursive=False))
