@@ -9,6 +9,8 @@ import pathlib
 from itertools import product
 import re
 
+import common
+
 if __name__ == '__main__':
     """    requires multiple pixel for each spot    """
 
@@ -59,6 +61,15 @@ if __name__ == '__main__':
         nargs='+',
         dest='channel_subset',
         help="channel subset e.g. -c G445 G525 R590 B445"
+    )
+
+    parser.add_argument(
+        "-s", "--spot_subset",
+        action='store',
+        type=str,
+        nargs='+',
+        dest='spot_subset',
+        help="spot subset e.g. -s C G A T"
     )
 
     args = parser.parse_args()
@@ -118,29 +129,20 @@ if __name__ == '__main__':
     print(len(channels), "channels: ", channels)
 
     fig = make_subplots(
-        rows=len(channels)-1, cols=len(channels)-1,  # e.g. 15x15
+        rows=len(channels)-1, cols=len(channels)-1,  # e.g. 14x14
     )
 
-    spot_colors = [
-        'red', 'orange', 'green', 'black', 'blue', 'brown', 'black', 'magenta', 'red', 'brown', 'lightblue',
-        'sandybrown', 'blue', 'brown', 'black', 'magenta', 'red', 'brown', 'lightblue', 'sandybrown',
-        'blue', 'brown', 'black', 'magenta', 'red', 'brown', 'lightblue', 'sandybrown']
-    colormap = {
-        'S0': 'black', # background
-        'S1': 'green', # 488
-        'S2': 'orange', # 532
-        'S3': '#4000ff', # 594 color blueish
-        'S4': 'red', # 647
-        'S5': 'pink', # scatter
-        '11': 'black', 21: 'green', 31: 'yellow', 41: 'red', 51: 'blue', 63: 'pink',
-        'D488': 'green',
-        'D532': 'orange',
-        'D594': '#4000ff',
-        'D647': 'red',
-        'J000': 'black'
-    }
+    unique_spots = df['spot'].unique()
+    if args.spot_subset:
+        spots = [s for s in args.spot_subset if s in unique_spots]
+        unique_spots = set(spots)
 
-    unique_spots = df['spot'].unique()  # [:5] # TODO
+    # add random colors
+    spot_color_map = common.default_base_color_map
+    for i, s in enumerate(unique_spots):
+        if s not in spot_color_map:
+            spot_color_map[s] = common.default_spot_colors[i % 5]
+
     print(len(unique_spots), "unique_spots: ", unique_spots)
 
     # custom
@@ -160,7 +162,7 @@ if __name__ == '__main__':
                 continue
             print(f"{y_channel}x{x_channel} ", end=" ", flush=True)
 
-            for sidx, s in enumerate(unique_spots):
+            for s in unique_spots:
                 # one spot
                 df_spot = df.loc[(df['spot'] == s)]
 
@@ -169,8 +171,7 @@ if __name__ == '__main__':
                         x=df_spot[x_channel],
                         y=df_spot[y_channel],
                         text='#' + df_spot['pixel_i'].astype(str) + '_y' + df_spot['r'].astype(str) + '_x' + df_spot['c'].astype(str),
-                        marker_color=spot_colors[sidx],
-                        #marker_color=colormap[s],
+                        marker_color=spot_color_map[s],
                         marker=dict(size=2),
                         mode='markers',
                         name=str(s),
