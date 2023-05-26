@@ -13,8 +13,10 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from plotly.graph_objs.layout import YAxis, XAxis, Margin
 import math
+import os
+import re
 
-from common import *
+import common
 
 '''
 
@@ -131,7 +133,7 @@ def calculate_and_apply_transformation(df: pd.DataFrame, roizipfilepath: str, in
 
     # apply matrix to each cycle
 
-    df_files = get_cycle_files(input_directory_path)
+    df_files = common.get_cycle_files(input_directory_path)
     print(df_files)
 
     rois = roifile.ImagejRoi.fromfile(roizipfilepath)
@@ -258,11 +260,17 @@ def calculate_and_apply_transformation(df: pd.DataFrame, roizipfilepath: str, in
     print(counts)
 
 
-    # {'B000': 0, 'D488': 1, 'D532': 2, 'D594': 3, 'D647': 4, 'S000': 5}
-    colors = ['green', 'yellow', 'orange', 'red', '#000000', 'blue', 'magenta']
+    colors = [
+        common.default_base_color_map['BG'],
+        common.default_base_color_map['G'],
+        common.default_base_color_map['C'],
+        common.default_base_color_map['A'],
+        common.default_base_color_map['T'],
+        'yellow', 'orange', 'magenta'
+    ]
     scale = [0, 1, 2, 3, 4, 5, 6, 250]
-    cmap=matplotlib.colors.ListedColormap(colors)
-    norm=matplotlib.colors.BoundaryNorm(scale, len(colors))
+    cmap = matplotlib.colors.ListedColormap(colors)
+    norm = matplotlib.colors.BoundaryNorm(scale, len(colors))
     axs[5].imshow(mask, aspect="auto", cmap=cmap, norm=norm)
 
 
@@ -276,16 +284,6 @@ def calculate_and_apply_transformation(df: pd.DataFrame, roizipfilepath: str, in
 
 #    plt.imshow(mask, aspect="auto", cmap=cmap, norm=norm)
     plt.show()
-
-    colormap = {
-        'BG': 'black',  # background
-        'SC': 'pink',   # scatter
-        'G': 'green',   # 488
-        'C': 'yellow',  # 532
-        'A': 'orange',  # 594
-        'T': 'red',     # 647
-    }
-
 
     '''
     # Create figure with secondary x-axis
@@ -356,7 +354,7 @@ def calculate_and_apply_transformation(df: pd.DataFrame, roizipfilepath: str, in
                     x=df_spot['cycle'],
                     y=df_spot[base_spot_name],
                     name=base_spot_name,
-                    marker_color=colormap[base_spot_name],
+                    marker_color=common.default_base_color_map[base_spot_name],
                     legendgroup=base_spot_name, showlegend=(i == 0)
                 ),
                 row=r, col=c
