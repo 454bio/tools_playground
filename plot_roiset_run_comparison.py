@@ -57,8 +57,7 @@ if __name__ == '__main__':
         required=True,
         type=argparse.FileType('w'),
         action='store',
-        dest='output',
-        default='.',
+        dest='outputfile',
         help="output filename, e.g. plot.jpg"
     )
 
@@ -72,7 +71,7 @@ if __name__ == '__main__':
         runs.append(f.name)
         print(f.name)
 
-    outputfilename = args.output.name
+    outputfilename = args.outputfile.name
     print(f"outputfilename: {outputfilename}")
 
     '''
@@ -109,12 +108,11 @@ if __name__ == '__main__':
         rows=len(spots), cols=len(channels),  # e.g. 9x15
     )
 
-
     line_colors = ['red', 'green', 'blue', 'black']
 
     for r, spot in enumerate(spots):
         for c, channel in enumerate(channels):
-            print (r*c+c, spot, channel)
+            print("subplot: ", r*c+c, spot, channel)
             for i, df in enumerate(dfs):
                 dft = df.loc[(df['spot'] == spot) & (df['WL'] == channel[1])]
 
@@ -131,7 +129,7 @@ if __name__ == '__main__':
                 fig.add_trace(
                     go.Scatter(
                         x=X, y=Y,
-                        legendgroup=runs[i], showlegend=(r==0 and c==0),
+                        legendgroup=runs[i], showlegend=(r == 0 and c == 0),
                         marker_color=line_colors[i],
                         line_width=1,
                         marker=dict(size=2),
@@ -139,7 +137,8 @@ if __name__ == '__main__':
                         name=runs[i],
                         text=spot,
                     ),
-                row=r + 1, col=c + 1)
+                    row=r + 1, col=c + 1
+                )
 
             if 1:
 #            if c == 0:
