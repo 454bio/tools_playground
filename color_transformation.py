@@ -53,7 +53,7 @@ def get_roi_mask(shape, rois):
     return [mask, nb_labels]
 
 
-def calculate_and_apply_transformation(df: pd.DataFrame, roizipfilepath: str, input_directory_path : str, output_directory_path : str, channel_names : list[str]):
+def calculate_and_apply_transformation(df: pd.DataFrame, roizipfilepath: str, input_directory_path : str, output_directory_path : str, channel_names: list[str], spot_names_subset: list[str]):
 
     '''
         spot  pixel_i  timestamp_ms  cycle  R365  ...   G590   B590   R645   G645   B645
@@ -303,17 +303,21 @@ def calculate_and_apply_transformation(df: pd.DataFrame, roizipfilepath: str, in
         ),
     )
     '''
-    unique_spot_names = list(df['spot'].unique())
-    s_list = [a for a in unique_spot_names if a.startswith('S')]
-    s_list.sort(key=lambda x: int(x.strip('S')))
-    x_list = [a for a in unique_spot_names if a.startswith('X')]
-    x_list.sort(key=lambda a: int(a.strip('X')))
+
+    if spot_names_subset:
+        unique_spot_names = spot_names_subset
+    else:
+        unique_spot_names = list(df['spot'].unique())
 
     spot_names = []
-    spot_names.insert(0, unique_spot_names.pop(unique_spot_names.index('G')))
-    spot_names.insert(0, unique_spot_names.pop(unique_spot_names.index('C')))
-    spot_names.insert(0, unique_spot_names.pop(unique_spot_names.index('A')))
     spot_names.insert(0, unique_spot_names.pop(unique_spot_names.index('T')))
+    spot_names.insert(0, unique_spot_names.pop(unique_spot_names.index('A')))
+    spot_names.insert(0, unique_spot_names.pop(unique_spot_names.index('C')))
+    spot_names.insert(0, unique_spot_names.pop(unique_spot_names.index('G')))
+    s_list = [a for a in unique_spot_names if a.startswith('S')]
+    s_list.sort(key=lambda v: int(v.strip('S')))
+    x_list = [a for a in unique_spot_names if a.startswith('X')]
+    x_list.sort(key=lambda v: int(v.strip('X')))
     spot_names.extend(s_list)
     spot_names.extend(x_list)
     spot_names.append(unique_spot_names.pop(unique_spot_names.index('BG')))
@@ -402,7 +406,7 @@ if __name__ == '__main__':
     if not test:
         parser = argparse.ArgumentParser(
             description='Color Transformation',
-            epilog='Text at the bottom of help'
+            epilog=''
         )
 
         parser.add_argument(
@@ -410,32 +414,23 @@ if __name__ == '__main__':
             required=True,
             action='store',
             dest='input_directory_path',
-            help="Input folder with .tif files"
+            help="Directory with .tif files, e.g.: /tmp/S001/raws/"
         )
 
         parser.add_argument(
-            "-s", "--spot_data",
+            "-p", "--spot-pixel-data",
             required=True,
             action='store',
             dest='spot_data_filename',
-            help="Path to spot_data.csv"
+            help="Spot pixel data file (with at least: C G A T BG), e.g.: /tmp/spot_pixel_data.csv"
         )
 
         parser.add_argument(
-            "-r", "--roi",
+            "-r", "--roiset",
             required=True,
             action='store',
             dest='roiset_file_path',
-            help="roiset zipfile"
-        )
-
-        parser.add_argument(
-            "-o", "--output",
-            required=True,
-            action='store',
-    #        type=argparse.FileType('w'),
-            dest='output_directory_path',
-            help="output directory for .png and .csv files"
+            help="ImageJ RoiSet file, e.g.: /tmp/RoiSet.zip"
         )
 
         parser.add_argument(
@@ -444,7 +439,25 @@ if __name__ == '__main__':
             type=str,
             nargs='+',
             dest='channel_subset',
-            help="channel subset e.g. -c G445 G525 R590 B445"
+            help="Channel subset e.g. -c G445 G525 R590 B445, Default: all 15 channels"
+        )
+
+        parser.add_argument(
+            "-s", "--spot_subset",
+            action='store',
+            type=str,
+            nargs='+',
+            dest='spot_subset',
+            help="Spot subset e.g. -s C G A T BG, Default: all spots in the RoiSet"
+        )
+
+        # Output
+        parser.add_argument(
+            "-o", "--output",
+            required=True,
+            action='store',
+            dest='output_directory_path',
+            help="Output directory for .png and .csv files, e.g.: /tmp/S001/analysis/"
         )
 
         args = parser.parse_args()
@@ -477,6 +490,10 @@ if __name__ == '__main__':
         else:
             channel_names = ['R365', 'G365', 'B365', 'R445', 'G445', 'B445', 'R525', 'G525', 'B525', 'R590', 'G590', 'B590', 'R645', 'G645', 'B645']
 
+        spot_names_subset = None
+        if args.spot_subset:
+            spot_names_subset = list(set(args.spot_subset))
+
     else:
 
         input_directory_path = ''
@@ -488,4 +505,4 @@ if __name__ == '__main__':
     df = pd.read_csv(spot_data_filename)
     print(df)
 
-    calculate_and_apply_transformation(df, roiset_file_path, input_directory_path, output_directory_path, channel_names)
+    calculate_and_apply_transformation(df, roiset_file_path, input_directory_path, output_directory_path, channel_names, spot_names_subset)

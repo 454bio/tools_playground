@@ -38,33 +38,49 @@ plot_roiset_run_comparison.py -i S0096.csv S0097.csv S0098.csv S0099.csv -o norm
 
 2. Create triangle graphs
 ```
-extract_roiset_pixel_data.py -i . -r RoiSet5.zip -o RoiSet5.csv -s 7 -p 500
+extract_roiset_pixel_data.py -i . -r RoiSet.zip -o RoiSet.csv -e 7 -n 500
 
-triangle_graph.py -i RoiSet5.csv -o triangle.png -g -m 20 33.3 12
+triangle_graph.py -i RoiSet.csv -o triangle.png -g -m 20 33.3 12
 
-triangle_graph.py -i RoiSet5.csv -o triangle.png -g -c G445 G525 R590 B445
+triangle_graph.py -i RoiSet.csv -o triangle.png -g -c G445 G525 R590 B445
+
+triangle_graph.py -i RoiSet.csv -o triangle.png -g -s A C G T BG S1 S2
+
+triangle_graph.py -i RoiSet.csv -o triangle.png -g -c G445 G525 R590 B445 -s A C G T BG S1 S2
 
 ```
 
 
 3. Create basic basecaller graph
 ```
-extract_roiset_pixel_data.py -s 7 -p 500 \
+extract_roiset_pixel_data.py -e 7 -n 500 \
     -i /mnt/nas_share/GoogleData/InstrumentData/MK27_02/20230517_1458_S0115_0001/raws \
     -r /mnt/nas_share/GoogleData/InstrumentData/MK27_02/20230517_1458_S0115_0001/analysis/RoiSetJRC4_28spotsACGT.zip \
     -o /tmp/roi_pixel_data.csv
     
 color_transformation.py \
-     -i /mnt/nas_share/GoogleData/InstrumentData/MK27_02/20230517_1458_S0115_0001/raws \
-     -r /mnt/nas_share/GoogleData/InstrumentData/MK27_02/20230517_1458_S0115_0001/analysis/RoiSetJRC4_28spotsACGT.zip \
-     -s /mnt/nas_share/GoogleData/InstrumentData/MK27_02/20230517_1458_S0115_0001/analysis/roi_pixel_data.csv \
-     -o /tmp
+    -i /mnt/nas_share/GoogleData/InstrumentData/MK27_02/20230517_1458_S0115_0001/raws \
+    -r /mnt/nas_share/GoogleData/InstrumentData/MK27_02/20230517_1458_S0115_0001/analysis/RoiSetJRC4_28spotsACGT.zip \
+    -p /mnt/nas_share/GoogleData/InstrumentData/MK27_02/20230517_1458_S0115_0001/analysis/roi_pixel_data.csv \
+    -o /tmp
+
+
 
 cd /mnt/nas_share/GoogleData/InstrumentData/MK27_02/20230517_1458_S0115_0001
+
+extract_roiset_pixel_data.py \
+    -e 7 \
+    -n 500 \
+    -i raws \
+    -r analysis/RoiSetJRC4_28spotsACGT.zip \
+    -o /tmp/spot_pixel_data.csv
+
 color_transformation.py \
-     -i raws \
-     -r analysis/RoiSetJRC4_28spotsACGT.zip \
-     -s analysis/roi_pixel_data.csv \
-     -o /tmp
-     -c G445 G525 R590 B445
+    -i raws \
+    -r analysis/RoiSetJRC4_28spotsACGT.zip \
+    -p analysis/spot_pixel_data.csv \
+    -c G445 G525 R590 B445 \
+    -s A C G T BG S1 S2 \
+    -o /tmp
+
 ```

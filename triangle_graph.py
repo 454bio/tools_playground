@@ -25,24 +25,7 @@ if __name__ == '__main__':
         action='store',
         type=argparse.FileType('r'),
         dest='input_csv',
-        help="Input csv file, e.g. spot_pixel_roiset.csv"
-    )
-
-    parser.add_argument(
-        "-o", "--output",
-        required=True,
-        type=argparse.FileType('w'),
-        action='store',
-        dest='output_image',
-        help="output filename, e.g. plot.jpg"
-    )
-
-    parser.add_argument(
-        '-g', '--graph',
-        action='store_true',
-        dest='show_graph',
-        default=False,
-        help="plot into browser"
+        help = "Spot pixel data file, e.g.: /tmp/spot_pixel_data.csv"
     )
 
     parser.add_argument(
@@ -60,7 +43,7 @@ if __name__ == '__main__':
         type=str,
         nargs='+',
         dest='channel_subset',
-        help="channel subset e.g. -c G445 G525 R590 B445"
+        help="Channel subset e.g. -c G445 G525 R590 B445, Default: all 15 channels"
     )
 
     parser.add_argument(
@@ -69,7 +52,24 @@ if __name__ == '__main__':
         type=str,
         nargs='+',
         dest='spot_subset',
-        help="spot subset e.g. -s C G A T"
+        help="Spot subset e.g. -s C G A T BG, Default: all spots in the RoiSet"
+    )
+
+    parser.add_argument(
+        "-o", "--output",
+        required=True,
+        type=argparse.FileType('w'),
+        action='store',
+        dest='output_image',
+        help="output image filename, e.g.: /tmp/plot.jpg"
+    )
+
+    parser.add_argument(
+        '-g', '--graph',
+        action='store_true',
+        dest='show_graph',
+        default=False,
+        help="plot into browser"
     )
 
     args = parser.parse_args()

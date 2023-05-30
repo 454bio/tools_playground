@@ -158,7 +158,7 @@ def main(inputpath: str, roizipfilepath: str, outputfilename: str, max_number_of
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(
-        description='Extracts pixel data',
+        description='Extracts pixel data of ONE cycle',
         epilog='help'
     )
 
@@ -185,7 +185,7 @@ if __name__ == '__main__':
     )
 
     parser.add_argument(
-        "-p", action='store',
+        "-n", action='store',
         type=int,
         dest='max_number_of_pixel_per_spot',
         default=5000,
@@ -193,11 +193,11 @@ if __name__ == '__main__':
     )
 
     parser.add_argument(
-        "-s", action='store',
+        "-e", action='store',
         required=True,
         type=int,
         dest='start_645_image_number',
-        help="image number of 645 image, 5 images will be used"
+        help="Start image number of 5 .tif image block (645, 590, 525, 445, 365), e.g.: -s 7  (...0007_645_C001...tif)"
     )
 
     args = parser.parse_args()
