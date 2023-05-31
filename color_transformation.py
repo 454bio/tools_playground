@@ -209,6 +209,64 @@ def calculate_and_apply_transformation(df: pd.DataFrame, roizipfilepath: str, in
                 dict_entry[base_spot_name] = mean_list[i][j]
             rows_list.append(dict_entry)
 
+
+        # debug subplots
+        if cycle == 1:
+
+            fig, axs = plt.subplots(1, 5)
+
+            for i in range(n_targets):
+                img = a[:, :, i]
+                print(f"min:  {img.min()}  , max: {img.max()}")
+
+                cax_01 = axs[i].imshow(img, cmap='gray')
+                fig.colorbar(cax_01, ax=axs[i])
+                #        axs[i].xaxis.set_major_formatter(plt.NullFormatter())
+                #        axs[i].yaxis.set_major_formatter(plt.NullFormatter())
+
+                #    plt.show()
+
+            mask = np.zeros(A.shape[:2], dtype=np.uint8)
+            print(f"mask: {type(mask)}, {mask.dtype}, {mask.shape}")
+
+            counts = [0] * n_targets
+            for r in range(a.shape[0]):
+                for c in range(a.shape[1]):
+                    pixel = a[r, c]
+                    label = np.array(pixel).argmax()
+                    #            print(sum(A[r,c]), label)
+                    #            if BG_threshold < sum(A[r,c]) and sum(A[r,c]) < SC_threshold:
+                    mask[r, c] = label
+                    #            else:
+                    #                mask[r, c] = 5 # TODO
+
+                    counts[label] += 1
+            print("counts per base:", counts)
+
+            colors = [
+                common.default_base_color_map['BG'],
+                common.default_base_color_map['G'],
+                common.default_base_color_map['C'],
+                common.default_base_color_map['A'],
+                common.default_base_color_map['T'],
+                'yellow', 'orange', 'magenta'
+            ]
+            scale = [0, 1, 2, 3, 4, 5, 6, 250]
+            cmap = matplotlib.colors.ListedColormap(colors)
+            norm = matplotlib.colors.BoundaryNorm(scale, len(colors))
+            axs[4].imshow(mask, aspect="auto", cmap=cmap, norm=norm)
+
+            #    axs[5].imshow(mask, aspect="auto", cmap=cmap, norm=norm, extent=[0, 400, 0, 300])
+
+            #    x = np.random.normal(170, 10, 250)
+            #    axs[5].hist(x)
+
+            #    x = range(300)
+            #    axs[5].plot(x, x, '--', linewidth=5, color='firebrick')
+
+            #    plt.imshow(mask, aspect="auto", cmap=cmap, norm=norm)
+            plt.show()
+
     # create final dataframe
     df = pd.DataFrame(rows_list)
     df.sort_values(by=['spot', 'cycle'], inplace=True)
@@ -226,66 +284,6 @@ def calculate_and_apply_transformation(df: pd.DataFrame, roizipfilepath: str, in
                   c16    
     '''
 
-    # debug
-#    print(a)
-
-    # Plot
-    fig, axs = plt.subplots(1, 6)
-
-    for i in range(n_targets):
-        img = a[:, :, i]
-        print(f"min:  {img.min()}  , max: {img.max()}")
-
-        cax_01 = axs[i].imshow(img, cmap='gray')
-        fig.colorbar(cax_01, ax=axs[i])
-#        axs[i].xaxis.set_major_formatter(plt.NullFormatter())
-#        axs[i].yaxis.set_major_formatter(plt.NullFormatter())
-
-#    plt.show()
-
-        mask = np.zeros(A.shape[:2], dtype=np.uint8)
-        print(f"mask: {type(mask)}, {mask.dtype}, {mask.shape}")
-
-
-    counts = [0]*n_targets
-    for r in range(a.shape[0]):
-        for c in range(a.shape[1]):
-            pixel = a[r, c]
-            label = np.array(pixel).argmax()
-#            print(sum(A[r,c]), label)
-#            if BG_threshold < sum(A[r,c]) and sum(A[r,c]) < SC_threshold:
-            mask[r, c] = label
-#            else:
-#                mask[r, c] = 5 # TODO
-
-            counts[label] += 1
-    print(counts)
-
-
-    colors = [
-        common.default_base_color_map['BG'],
-        common.default_base_color_map['G'],
-        common.default_base_color_map['C'],
-        common.default_base_color_map['A'],
-        common.default_base_color_map['T'],
-        'yellow', 'orange', 'magenta'
-    ]
-    scale = [0, 1, 2, 3, 4, 5, 6, 250]
-    cmap = matplotlib.colors.ListedColormap(colors)
-    norm = matplotlib.colors.BoundaryNorm(scale, len(colors))
-    axs[5].imshow(mask, aspect="auto", cmap=cmap, norm=norm)
-
-
-#    axs[5].imshow(mask, aspect="auto", cmap=cmap, norm=norm, extent=[0, 400, 0, 300])
-
-#    x = np.random.normal(170, 10, 250)
-#    axs[5].hist(x)
-
-#    x = range(300)
-#    axs[5].plot(x, x, '--', linewidth=5, color='firebrick')
-
-#    plt.imshow(mask, aspect="auto", cmap=cmap, norm=norm)
-    plt.show()
 
     '''
     # Create figure with secondary x-axis
