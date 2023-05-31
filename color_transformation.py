@@ -151,6 +151,7 @@ def calculate_and_apply_transformation(df: pd.DataFrame, roizipfilepath: str, in
         print("Apply transformation matrix on:")
         cyclefilenames = (df_files[df_files['cycle'] == cycle]).tail(5)
         print("c:", cycle, cyclefilenames.to_string())
+        cycle_timestamp = cyclefilenames.iloc[0]['timestamp']
 
         for i, cyclefilename in cyclefilenames.iterrows():
             filenamepath = cyclefilename['filenamepath']
@@ -189,6 +190,10 @@ def calculate_and_apply_transformation(df: pd.DataFrame, roizipfilepath: str, in
         mean_list = []
         for i in range(n_targets):
             mean_list.append(ndimage.labeled_comprehension(a[:, :, i], oligo_mask, label_ids, np.mean, float, 0))
+
+            img = a[:, :, i]
+            cv.imwrite(os.path.join(output_directory_path, f"C{cycle:03d}_{dye_bases[i]}_{cycle_timestamp:09d}_gray.png"), (img+1)*100)
+#            cv.imwrite(os.path.join(output_directory_path, f"C{cycle:03d}_{dye_bases[i]}_{cycle_timestamp:09d}_gray.tif"), img)
 
 
         for j, roi in enumerate(rois):
@@ -237,9 +242,6 @@ def calculate_and_apply_transformation(df: pd.DataFrame, roizipfilepath: str, in
 #        axs[i].yaxis.set_major_formatter(plt.NullFormatter())
 
 #    plt.show()
-
-        cv.imwrite(os.path.join(output_directory_path, str(i)+'_gray.png'), (img+1)*100)
-        cv.imwrite(os.path.join(output_directory_path, str(i)+'_gray.tif'), img)
 
         mask = np.zeros(A.shape[:2], dtype=np.uint8)
         print(f"mask: {type(mask)}, {mask.dtype}, {mask.shape}")
