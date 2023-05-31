@@ -208,7 +208,7 @@ def calculate_and_apply_transformation(df: pd.DataFrame, roizipfilepath: str, in
     df = pd.DataFrame(rows_list)
     df.sort_values(by=['spot', 'cycle'], inplace=True)
 #           print(f"Writing {outputfilename}")
-#           df.to_csv(outputfilename, index=False)
+    df.to_csv(os.path.join(output_directory_path, "color_transformed_spots.csv"), index=False)
     print(df.to_string(index=False))
 
     '''
