@@ -34,7 +34,13 @@ plot_roiset_run_comparison.py -i S0096.csv S0097.csv S0098.csv S0099.csv -o orig
 
 plot_roiset_run_comparison.py -i S0096.csv S0097.csv S0098.csv S0099.csv -o normalized.jpg -n
 ```
-
+Create browser based graph with spot trajectories
+```
+plot_spot_trajectories.py -i analysis/metrics.csv 
+plot_spot_trajectories.py -i analysis/metrics.csv -c G445 G525 R590 B445
+plot_spot_trajectories.py -i analysis/metrics.csv -s S1 S2 -c G445 G525 R590 B445
+plot_spot_trajectories.py -i analysis/metrics.csv -o analysis/trajectories.png
+```
 
 2. Create triangle graphs
 ```
