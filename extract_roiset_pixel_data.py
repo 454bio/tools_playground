@@ -45,8 +45,10 @@ def main(
     print(f"Image shape {image0.shape}")
 
     # mask for one RGB channel
-    mask = np.zeros(image0.shape[:2], dtype=np.uint8)
-    print(f"mask: {type(mask)}, {mask.dtype}, {mask.shape}")
+    ref_mask = np.zeros(image0.shape[:2], dtype=np.uint8)
+    spot_mask = np.zeros(image0.shape[:2], dtype=np.uint8)
+    mask_shape = ref_mask.shape
+    print(f"mask: {type(ref_mask)}, {ref_mask.dtype}, {ref_mask.shape}")
 
     for idx, roi in enumerate(rois):
         if __debug__:
@@ -59,17 +61,26 @@ def main(
         y_axis_length = int((roi.bottom - roi.top)/2.0)
 
         label_id = idx + 1
-        mask = cv.ellipse(mask, (xc, yc), [x_axis_length, y_axis_length], angle=0, startAngle=0, endAngle=360, color=label_id, thickness=-1)
+        if roi.name in ['A', 'C', 'G', 'T', 'BG']:
+            ref_mask = cv.ellipse(ref_mask, (xc, yc), [x_axis_length, y_axis_length], angle=0, startAngle=0, endAngle=360, color=label_id, thickness=-1)
+        else:
+            spot_mask = cv.ellipse(spot_mask, (xc, yc), [x_axis_length, y_axis_length], angle=0, startAngle=0, endAngle=360, color=label_id, thickness=-1)
 
     # how many regions?
     nb_labels = len(rois)
     label_ids = np.arange(1, nb_labels + 1) # range(1, nb_labels + 1)
     print(f"labels: {nb_labels}")
 
-    sizes = ndimage.sum_labels(np.ones(mask.shape), mask, range(nb_labels + 1)).astype(int)
-    print(f"number of pixels per roi: {sizes}")
+    ref_sizes = ndimage.sum_labels(np.ones(mask_shape), ref_mask, range(nb_labels + 1)).astype(int)
+    print(f"number of pixels per reference spot:\n {ref_sizes}")
+    spot_sizes = ndimage.sum_labels(np.ones(mask_shape), spot_mask, range(nb_labels + 1)).astype(int)
+    print(f"number of pixels per non-reference spot:\n {spot_sizes}")
+    sizes = np.array(list(map(max, ref_sizes, spot_sizes)))
+    print(f"number of pixels per spot:\n {sizes}")
 
-    plt.imshow(mask)
+    plt.imshow(ref_mask)
+    plt.show()
+    plt.imshow(spot_mask)
     plt.show()
 
     images = {}
@@ -102,10 +113,10 @@ def main(
 
     spot_pixel_list = []
 
-    for r, c in np.ndindex(mask.shape):
+    for r, c in np.ndindex(mask_shape):
 
-        label = mask[r, c]
-        if label == 0:  # no spot
+        label = max(ref_mask[r, c], spot_mask[r, c])
+        if label == 0:  # no reference and no spot
             continue
 
         label_counter[label] += 1
