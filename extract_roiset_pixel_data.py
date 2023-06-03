@@ -21,22 +21,24 @@ Produces a compact csv file format, but the timestamps are slightly inaccurate, 
 
 new_format = 1
 
-def main(inputpath: str, roizipfilepath: str, outputfilename: str, max_number_of_pixel_per_spot: int, image_number: int):
+def main(
+        input_raw_path: str,
+        roiset_zip_filename: str,
+        output_csv_filename: str,
+        max_number_of_pixel_per_spot: int = 300,
+        image_number: int = 0
+):
 
-    df_files = get_cycle_files(inputpath)
+    df_files = get_cycle_files(input_raw_path)
     print(df_files)
-    print(type(df_files))
-
 
     # check if roifile exists
-    if not pathlib.Path(roizipfilepath).is_file():
-        print(f"Cannot open {roizipfilepath}")
+    if not pathlib.Path(roiset_zip_filename).is_file():
+        print(f"Cannot open {roiset_zip_filename}")
         exit(-1)
 
-    rois = roifile.ImagejRoi.fromfile(roizipfilepath)
+    rois = roifile.ImagejRoi.fromfile(roiset_zip_filename)
     print(rois)
-
-    rows_list = []
 
     # read image size from first image
     image0 = cv.imread(df_files.iloc[0]['filenamepath'], cv.IMREAD_UNCHANGED)[:, :, ::-1]  # BGR to RGB, 16bit data
@@ -86,19 +88,19 @@ def main(inputpath: str, roizipfilepath: str, outputfilename: str, max_number_of
         filename = os.path.basename(filenamepath)
         print(f"{index:4}   {filename:43}   WL:{file_info_wl:4}   CY:{file_info_cy:3}   TS:{file_info_ts:9}")
 
-
         image = cv.imread(filenamepath, cv.IMREAD_UNCHANGED)[:, :, ::-1]  # BGR to RGB, 16bit data
 #        image[image<4096]=4096
 #        image -= 4096
         images[file_info_wl] = {'image': image, 'cycle': int(file_info_cy), 'timestamp_ms': file_info_ts}
 
-
-    label_counter = [-1]*(nb_labels+1) # +1 for 0 background
-    label_counter_in_subset = [-1]*(nb_labels+1) # +1 for 0 background
+    label_counter = [-1]*(nb_labels+1)  # +1 for 0 background
+    label_counter_in_subset = [-1]*(nb_labels+1)  # +1 for 0 background
 
     ratio = (sizes // max_number_of_pixel_per_spot)+1
     print(sizes)
     print(ratio)
+
+    spot_pixel_list = []
 
     for r, c in np.ndindex(mask.shape):
 
@@ -128,7 +130,7 @@ def main(inputpath: str, roizipfilepath: str, outputfilename: str, max_number_of
                 for i, color in enumerate(['R', 'G', 'B']):
                     dict_entry[color+str(wl)] = images[wl]['image'][r][c][i]
 
-            rows_list.append(dict_entry)
+            spot_pixel_list.append(dict_entry)
 
         else:
             for wl in [365, 445, 525, 590, 645]:
@@ -144,15 +146,14 @@ def main(inputpath: str, roizipfilepath: str, outputfilename: str, max_number_of
                 for i, color in enumerate(['R', 'G', 'B']):
                     dict_entry[color] = images[wl]['image'][r][c][i]
 
-                rows_list.append(dict_entry)
+                spot_pixel_list.append(dict_entry)
 
     # create final dataframe
-    df = pd.DataFrame(rows_list)
+    df = pd.DataFrame(spot_pixel_list)
     df.sort_values(by=['spot', 'cycle', 'timestamp_ms'], inplace=True)
-    print(f"Writing {outputfilename}")
-    df.to_csv(outputfilename, index=False, lineterminator='\n')
+    print(f"Writing {output_csv_filename}")
+    df.to_csv(output_csv_filename, index=False, lineterminator='\n')
 #    print(df.to_csv(index=False))
-
 
 
 if __name__ == '__main__':
@@ -163,60 +164,49 @@ if __name__ == '__main__':
     )
 
     parser.add_argument(
-        "-o", "--output", action='store',
-        type=argparse.FileType('w'),
-        required=True,
-        dest='outputcsv',
-        help="output filename e.g. out.csv"
-    )
-
-    parser.add_argument(
         "-i", "--input", action='store',
-        dest='input',
-        default='.',
+        required=True,
+        dest='input_raw_path',
         help="Input folder with .tif files"
     )
 
     parser.add_argument(
         "-r", "--roi", action='store',
-        dest='roizipfilepath',
-        default='RoiSet.zip',
-        help="roiset zipfile"
+        required=True,
+        dest='roiset_zip_filename',
+        help="roiset zip filename"
+    )
+
+    parser.add_argument(
+        "-o", "--output", action='store',
+        type=argparse.FileType('w'),
+        required=True,
+        dest='output_csv_filename',
+        help="output filename e.g. /tmp/spot_pixel_data.csv"
     )
 
     parser.add_argument(
         "-n", action='store',
         type=int,
         dest='max_number_of_pixel_per_spot',
-        default=5000,
+        default=200,
         help="Maximum number of pixel per spot in the csv file"
     )
 
     parser.add_argument(
         "-e", action='store',
-        required=True,
         type=int,
+        default=0,  # all
         dest='start_645_image_number',
-        help="Start image number of 5 .tif image block (645, 590, 525, 445, 365), e.g.: -s 7  (...0007_645_C001...tif)"
+        help="Start image number of 5 .tif image block (645, 590, 525, 445, 365) \ne.g.: -e 7  (...0007_645_C001...tif)"
     )
 
     args = parser.parse_args()
-    inputpath = args.input
-    print(f"inputpath: {inputpath}")
 
-    outputfilename = args.outputcsv
-    print(f"outputfilename: {outputfilename}")
-
-    roizipfilepath = args.roizipfilepath
-    print(f"roizipfilepath: {roizipfilepath}")
-
-    max_number_of_pixel_per_spot = args.max_number_of_pixel_per_spot
-    print(f"max_number_of_pixel_per_spot: {max_number_of_pixel_per_spot}")
-
-    image_number = args.start_645_image_number
-    print(f"image_number: {image_number}")
-
-    # main
-    main(inputpath, roizipfilepath, outputfilename, max_number_of_pixel_per_spot, image_number)
-
-
+    main(
+        args.input_raw_path,
+        args.roiset_zip_filename,
+        args.output_csv_filename,
+        args.max_number_of_pixel_per_spot,
+        args.start_645_image_number
+    )
