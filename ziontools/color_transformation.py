@@ -1,6 +1,5 @@
-#!/usr/bin/env python
-
-import argparse
+import math
+import os
 import pandas as pd
 import numpy as np
 from sklearn import linear_model
@@ -11,17 +10,8 @@ from scipy import ndimage
 import roifile
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-from plotly.graph_objs.layout import YAxis, XAxis, Margin
-import math
-import os
-import re
 
-import common
-
-'''
-
-'''
-
+import ziontools.common
 
 def get_roi_mask(shape, rois):
 
@@ -53,7 +43,10 @@ def get_roi_mask(shape, rois):
     return [mask, nb_labels]
 
 
-def calculate_and_apply_transformation(df: pd.DataFrame, roizipfilepath: str, input_directory_path : str, output_directory_path : str, channel_names: list[str], spot_names_subset: list[str]):
+def calculate_and_apply_transformation(spot_data_filename: str, roizipfilepath: str, input_directory_path: str, output_directory_path: str, channel_names: list[str], spot_names_subset: list[str]):
+
+    df = pd.read_csv(spot_data_filename)
+    print(df)
 
     '''
         spot  pixel_i  timestamp_ms  cycle  R365  ...   G590   B590   R645   G645   B645
@@ -133,7 +126,7 @@ def calculate_and_apply_transformation(df: pd.DataFrame, roizipfilepath: str, in
 
     # apply matrix to each cycle
 
-    df_files = common.get_cycle_files(input_directory_path)
+    df_files = ziontools.common.get_cycle_files(input_directory_path)
     print(df_files)
 
     rois = roifile.ImagejRoi.fromfile(roizipfilepath)
@@ -244,11 +237,11 @@ def calculate_and_apply_transformation(df: pd.DataFrame, roizipfilepath: str, in
             print("counts per base:", counts)
 
             colors = [
-                common.default_base_color_map['BG'],
-                common.default_base_color_map['G'],
-                common.default_base_color_map['C'],
-                common.default_base_color_map['A'],
-                common.default_base_color_map['T'],
+                ziontools.common.default_base_color_map['BG'],
+                ziontools.common.default_base_color_map['G'],
+                ziontools.common.default_base_color_map['C'],
+                ziontools.common.default_base_color_map['A'],
+                ziontools.common.default_base_color_map['T'],
                 'yellow', 'orange', 'magenta'
             ]
             scale = [0, 1, 2, 3, 4, 5, 6, 250]
@@ -358,7 +351,7 @@ def calculate_and_apply_transformation(df: pd.DataFrame, roizipfilepath: str, in
                     x=df_spot['cycle'],
                     y=df_spot[base_spot_name],
                     name=base_spot_name,
-                    marker_color=common.default_base_color_map[base_spot_name],
+                    marker_color=ziontools.common.default_base_color_map[base_spot_name],
                     legendgroup=base_spot_name, showlegend=(i == 0)
                 ),
                 row=r, col=c
@@ -399,110 +392,3 @@ def calculate_and_apply_transformation(df: pd.DataFrame, roizipfilepath: str, in
     fig.show()
 
 
-if __name__ == '__main__':
-
-    test = 0
-
-    if not test:
-        parser = argparse.ArgumentParser(
-            description='Color Transformation',
-            epilog=''
-        )
-
-        parser.add_argument(
-            "-i", "--input",
-            required=True,
-            action='store',
-            dest='input_directory_path',
-            help="Directory with .tif files, e.g.: /tmp/S001/raws/"
-        )
-
-        parser.add_argument(
-            "-p", "--spot-pixel-data",
-            required=True,
-            action='store',
-            dest='spot_data_filename',
-            help="Spot pixel data file (with at least: C G A T BG), e.g.: /tmp/spot_pixel_data.csv"
-        )
-
-        parser.add_argument(
-            "-r", "--roiset",
-            required=True,
-            action='store',
-            dest='roiset_file_path',
-            help="ImageJ RoiSet file, e.g.: /tmp/RoiSet.zip"
-        )
-
-        parser.add_argument(
-            "-c", "--channel_subset",
-            action='store',
-            type=str,
-            nargs='+',
-            dest='channel_subset',
-            help="Channel subset e.g. -c G445 G525 R590 B445, Default: all 15 channels"
-        )
-
-        parser.add_argument(
-            "-s", "--spot_subset",
-            action='store',
-            type=str,
-            nargs='+',
-            dest='spot_subset',
-            help="Spot subset e.g. -s C G A T BG, Default: all spots in the RoiSet"
-        )
-
-        # Output
-        parser.add_argument(
-            "-o", "--output",
-            required=True,
-            action='store',
-            dest='output_directory_path',
-            help="Output directory for .png and .csv files, e.g.: /tmp/S001/analysis/"
-        )
-
-        args = parser.parse_args()
-        input_directory_path = args.input_directory_path
-        print(f"input_directory_path: {input_directory_path}")
-
-        output_directory_path = args.output_directory_path
-        print(f"output_directory_path: {output_directory_path}")
-        if not os.path.exists(output_directory_path):
-            print(f"ERROR: output path {output_directory_path} doesn't exist")
-            exit(-1)
-
-        roiset_file_path = args.roiset_file_path
-        print(f"roiset_file_path: {roiset_file_path}")
-
-        spot_data_filename = args.spot_data_filename
-        print(f"spot_data_filename: {spot_data_filename}")
-
-
-        if args.channel_subset:
-            assert len(args.channel_subset) >= 2, "Please provide at least 2 channels"
-            for ch in args.channel_subset:
-                pattern = "^[R|G|B](\d{3})$"
-                match = re.search(pattern, ch)
-                if not match:
-                    print(f"{ch} doesn't match format, e.g. R365")
-                    exit(-1)
-
-            channel_names = args.channel_subset
-        else:
-            channel_names = ['R365', 'G365', 'B365', 'R445', 'G445', 'B445', 'R525', 'G525', 'B525', 'R590', 'G590', 'B590', 'R645', 'G645', 'B645']
-
-        spot_names_subset = None
-        if args.spot_subset:
-            spot_names_subset = list(set(args.spot_subset))
-
-    else:
-
-        input_directory_path = ''
-        spot_data_filename = ''
-        roiset_file_path = ''
-        output_directory_path = ''
-        channel_names = ['R365', 'G365', 'B365', 'R445']
-
-    df = pd.read_csv(spot_data_filename)
-    print(df)
-
-    calculate_and_apply_transformation(df, roiset_file_path, input_directory_path, output_directory_path, channel_names, spot_names_subset)
