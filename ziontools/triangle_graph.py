@@ -1,6 +1,3 @@
-#!/usr/bin/env python
-
-import argparse
 from plotly.subplots import make_subplots
 import plotly.graph_objects as go
 from plotly.offline import plot
@@ -9,139 +6,52 @@ import pathlib
 from itertools import product
 import re
 
-import common
+from .common import default_base_color_map, default_spot_colors
 
-if __name__ == '__main__':
-    """    requires multiple pixel for each spot    """
+def plot_triangle(
+        spot_data_filename: str,
+        channel_subset: list[str],
+        spot_subset: list[str],
+        rgb_mix
+):
 
-    parser = argparse.ArgumentParser(
-        description='plots channel x channel triangle graph',
-        epilog='help'
-    )
+    print(f"input_csv filename: {spot_data_filename}")
 
-    parser.add_argument(
-        "-i", "--input",
-        required=True,
-        action='store',
-        type=argparse.FileType('r'),
-        dest='input_csv',
-        help = "Spot pixel data file, e.g.: /tmp/spot_pixel_data.csv"
-    )
-
-    parser.add_argument(
-        "-m", "--mix",
-        action='store',
-        type=float,
-        nargs='+',
-        dest='rgb_mix',
-        help="RGB percentages as float e.g. -m 33.3 25 30.0"
-    )
-
-    parser.add_argument(
-        "-c", "--channel_subset",
-        action='store',
-        type=str,
-        nargs='+',
-        dest='channel_subset',
-        help="Channel subset e.g. -c G445 G525 R590 B445, Default: all 15 channels"
-    )
-
-    parser.add_argument(
-        "-s", "--spot_subset",
-        action='store',
-        type=str,
-        nargs='+',
-        dest='spot_subset',
-        help="Spot subset e.g. -s C G A T BG, Default: all spots in the RoiSet"
-    )
-
-    parser.add_argument(
-        "-o", "--output",
-        required=True,
-        type=argparse.FileType('w'),
-        action='store',
-        dest='output_image',
-        help="output image filename, e.g.: /tmp/plot.jpg"
-    )
-
-    parser.add_argument(
-        '-g', '--graph',
-        action='store_true',
-        dest='show_graph',
-        default=False,
-        help="plot into browser"
-    )
-
-    args = parser.parse_args()
-
-    show_graph = args.show_graph
-
-    if args.rgb_mix:
-        assert len(args.rgb_mix) == 3, "Please provide 3 floats"
-        mix = True
-        p = {
-            'R': args.rgb_mix[0]/100,
-            'G': args.rgb_mix[1]/100,
-            'B': args.rgb_mix[2]/100
-        }
-        print(f'using rgb mix: {p}')
-    else:
-        mix = False
-
-    inputfilename = args.input_csv.name
-    print(f"input_csv filename: {inputfilename}")
-
-    outputfilename = args.output_image.name
-    print(f"output_image filename: {outputfilename}")
-
-    # check if inputfilename exists
-    if not pathlib.Path(inputfilename).is_file():
-        print(f"Cannot open {inputfilename}")
+    # check if spot_data_filename exists
+    if not pathlib.Path(spot_data_filename).is_file():
+        print(f"Cannot open {spot_data_filename}")
         exit(-1)
 
-    df = pd.read_csv(inputfilename)
+    df = pd.read_csv(spot_data_filename)
     print(df)
 
-    if args.channel_subset:
-        assert len(args.channel_subset) >= 2, "Please provide at least 2 channels"
-        for ch in args.channel_subset:
-            pattern = "^[R|G|B](\d{3})$"
-            match = re.search(pattern, ch)
-            if not match:
-                print(f"{ch} doesn't match format, e.g. R365")
-                exit(-1)
+    excitations = [365, 445, 525, 590, 645]
+    image_channels = ['R', 'G', 'B']
+    channels = [a[0] + str(a[1]) for a in product(image_channels, excitations)]
+    if channel_subset:
+        channels = channel_subset
 
-        channels = args.channel_subset
-    else:
-        excitations = [365, 445, 525, 590, 645]
-        image_channels = ['R', 'G', 'B']
-
-        if mix:
-            image_channels = ['M']
-            # adding mixed columns
-            for exc in excitations:
-                # e.g.  df['M365'] = p['R']*df['R365'] + p['G']*df['G365'] + p['B']*df['B365']
-                df['M' + str(exc)] = p['R'] * df['R' + str(exc)] + p['G'] * df['G' + str(exc)] + p['B'] * df[
-                    'B' + str(exc)]
-
-        channels = [a[0]+str(a[1]) for a in product(image_channels, excitations)]
+    if rgb_mix:
+        p = rgb_mix
+        image_channels = ['M']
+        # adding mixed columns
+        for exc in excitations:
+            # e.g.  df['M365'] = p['R']*df['R365'] + p['G']*df['G365'] + p['B']*df['B365']
+            df['M' + str(exc)] = p['R'] * df['R' + str(exc)] + p['G'] * df['G' + str(exc)] + p['B'] * df[
+                'B' + str(exc)]
 
     print(len(channels), "channels: ", channels)
 
-    fig = make_subplots(
-        rows=len(channels)-1, cols=len(channels)-1,  # e.g. 14x14
-    )
-
     unique_spots = df['spot'].unique()
-    if args.spot_subset:
-        spots = [s for s in args.spot_subset if s in unique_spots]
+    if spot_subset:
+        spots = [s for s in spot_subset if s in unique_spots]
         unique_spots = set(spots)
 
     # add random colors
-    spot_color_map = common.default_base_color_map
+    spot_color_map = default_base_color_map
     for i, s in enumerate(unique_spots):
         if s not in spot_color_map:
-            spot_color_map[s] = common.default_spot_colors[i % 5]
+            spot_color_map[s] = default_spot_colors[i % 5]
 
     print(len(unique_spots), "unique_spots: ", unique_spots)
 
@@ -156,6 +66,10 @@ if __name__ == '__main__':
     }
 
     print(f"Generate triangle subplots:")
+    fig = make_subplots(
+        rows=len(channels) - 1, cols=len(channels) - 1,  # e.g. 14x14
+    )
+
     for r, y_channel in enumerate(channels):
         for c, x_channel in enumerate(channels):
             if c >= r:
@@ -170,7 +84,8 @@ if __name__ == '__main__':
                     go.Scatter(
                         x=df_spot[x_channel],
                         y=df_spot[y_channel],
-                        text='#' + df_spot['pixel_i'].astype(str) + '_y' + df_spot['r'].astype(str) + '_x' + df_spot['c'].astype(str),
+                        text='#' + df_spot['pixel_i'].astype(str) + '_y' + df_spot['r'].astype(str) + '_x' + df_spot[
+                            'c'].astype(str),
                         marker_color=spot_color_map[s],
                         marker=dict(size=2),
                         mode='markers',
@@ -180,9 +95,9 @@ if __name__ == '__main__':
                     row=r, col=c + 1
                 )
 
-#            if c == 0:
+            #            if c == 0:
             fig.update_yaxes(title_text=y_channel, row=r, col=c + 1)
-#            if r == len(channels) - 1:
+            #            if r == len(channels) - 1:
             fig.update_xaxes(title_text=x_channel, row=r, col=c + 1)
             if use_custom_max_intensity_map:
                 fig.update_xaxes(range=[4000, custom_max_intensity[x_channel]], row=r, col=c + 1)
@@ -190,11 +105,11 @@ if __name__ == '__main__':
             else:
                 fig.update_xaxes(range=[4000, max(df[x_channel])], row=r, col=c + 1)
                 fig.update_yaxes(range=[4000, max(df[y_channel])], row=r, col=c + 1)
-#            print(f"max x {x_channel} : {max(df_spot[x_channel])}, max y {y_channel} : {max(df_spot[y_channel])}")
+        #            print(f"max x {x_channel} : {max(df_spot[x_channel])}, max y {y_channel} : {max(df_spot[y_channel])}")
         print("-")  # end of row reached
 
-#    fig.update_xaxes(range=[4000, max(df_spot[x_channel])])
-#    fig.update_yaxes(range=[4000, max(df_spot[y_channel])])
+    #    fig.update_xaxes(range=[4000, max(df_spot[x_channel])])
+    #    fig.update_yaxes(range=[4000, max(df_spot[y_channel])])
     fig.update_layout(height=3000, width=3000,
                       title_text="")
     fig.update_layout(legend=dict(title_font_family="Times New Roman",
@@ -202,15 +117,4 @@ if __name__ == '__main__':
                                   itemsizing='constant'
                                   ))
 
-    print(f"Generate figure ...")
-    plot1 = plot(fig, output_type='div')
-
-    print(f"Write {outputfilename} ...")
-
-#    fig.write_image(outputfilename.replace(".png", ".svg"))
-    fig.write_image(outputfilename, scale=1.5)
-
-    if show_graph:
-        fig.show()
-
-    print("done")
+    return fig
