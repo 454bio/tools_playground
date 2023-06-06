@@ -1,5 +1,6 @@
 import math
 import os
+import re
 import pandas as pd
 import numpy as np
 from sklearn import linear_model
@@ -11,7 +12,7 @@ import roifile
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
-import ziontools.common
+from .common import get_cycle_files, default_base_color_map, default_spot_colors
 
 def get_roi_mask(shape, rois):
 
@@ -43,7 +44,26 @@ def get_roi_mask(shape, rois):
     return [mask, nb_labels]
 
 
-def calculate_and_apply_transformation(spot_data_filename: str, roizipfilepath: str, input_directory_path: str, output_directory_path: str, channel_names: list[str], spot_names_subset: list[str]):
+def calculate_and_apply_transformation(
+        spot_data_filename: str,
+        roizipfilepath: str,
+        input_directory_path: str,
+        output_directory_path: str,
+        channel_names_subset: list[str],
+        spot_names_subset: list[str]
+):
+    if channel_names_subset:
+        assert len(channel_names_subset) >= 2, "Please provide at least 2 channels"
+        for ch in channel_names_subset:
+            pattern = "^[R|G|B](\d{3})$"
+            match = re.search(pattern, ch)
+            if not match:
+                print(f"{ch} doesn't match format, e.g. R365")
+                exit(-1)
+
+        channel_names = channel_names_subset
+    else:
+        channel_names = ['R365', 'G365', 'B365', 'R445', 'G445', 'B445', 'R525', 'G525', 'B525', 'R590', 'G590', 'B590', 'R645', 'G645', 'B645']
 
     df = pd.read_csv(spot_data_filename)
     print(df)
@@ -126,7 +146,7 @@ def calculate_and_apply_transformation(spot_data_filename: str, roizipfilepath: 
 
     # apply matrix to each cycle
 
-    df_files = ziontools.common.get_cycle_files(input_directory_path)
+    df_files = get_cycle_files(input_directory_path)
     print(df_files)
 
     rois = roifile.ImagejRoi.fromfile(roizipfilepath)
@@ -237,11 +257,11 @@ def calculate_and_apply_transformation(spot_data_filename: str, roizipfilepath: 
             print("counts per base:", counts)
 
             colors = [
-                ziontools.common.default_base_color_map['BG'],
-                ziontools.common.default_base_color_map['G'],
-                ziontools.common.default_base_color_map['C'],
-                ziontools.common.default_base_color_map['A'],
-                ziontools.common.default_base_color_map['T'],
+                default_base_color_map['BG'],
+                default_base_color_map['G'],
+                default_base_color_map['C'],
+                default_base_color_map['A'],
+                default_base_color_map['T'],
                 'yellow', 'orange', 'magenta'
             ]
             scale = [0, 1, 2, 3, 4, 5, 6, 250]
@@ -351,7 +371,7 @@ def calculate_and_apply_transformation(spot_data_filename: str, roizipfilepath: 
                     x=df_spot['cycle'],
                     y=df_spot[base_spot_name],
                     name=base_spot_name,
-                    marker_color=ziontools.common.default_base_color_map[base_spot_name],
+                    marker_color=default_base_color_map[base_spot_name],
                     legendgroup=base_spot_name, showlegend=(i == 0)
                 ),
                 row=r, col=c
@@ -362,7 +382,7 @@ def calculate_and_apply_transformation(spot_data_filename: str, roizipfilepath: 
             go.Scatter(
                 x=df_spot['cycle'],
                 y=df_spot['G']/1000000+1,
-                text=df_spot[dye_bases].idxmax(axis=1),  # column with highest value
+                text=df_spot[dye_bases].idxmax(axis=1),  # column with the highest value
                 marker_color="black",
                 mode="text",
                 textposition="top center",
@@ -387,8 +407,5 @@ def calculate_and_apply_transformation(spot_data_filename: str, roizipfilepath: 
                                   font=dict(size=40)
                                   ))
 
-    fig.write_image(os.path.join(output_directory_path, "bar.png"), scale=1.5)
-
-    fig.show()
-
+    return fig
 

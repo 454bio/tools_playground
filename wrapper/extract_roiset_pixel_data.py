@@ -1,9 +1,6 @@
 #!/usr/bin/env python
 
 import argparse
-
-import sys
-#sys.path.insert(0, "/home/domibel/454_Bio/tools_playground/")
 import ziontools
 
 if __name__ == '__main__':

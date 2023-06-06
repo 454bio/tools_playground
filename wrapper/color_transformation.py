@@ -2,9 +2,6 @@
 
 import os
 import argparse
-
-import sys
-sys.path.insert(0, "/home/domibel/454_Bio/tools_playground/")
 import ziontools
 
 if __name__ == '__main__':
@@ -21,7 +18,7 @@ if __name__ == '__main__':
             "-i", "--input",
             required=True,
             action='store',
-            dest='input_directory_path',
+            dest='input_raw_path',
             help="Directory with .tif files, e.g.: /tmp/S001/raws/"
         )
 
@@ -68,9 +65,18 @@ if __name__ == '__main__':
             help="Output directory for .png and .csv files, e.g.: /tmp/S001/analysis/"
         )
 
+        parser.add_argument(
+            '-g', '--graph',
+            action='store_true',
+            dest='show_graph',
+            default=False,
+            help="plot into browser"
+        )
+
         args = parser.parse_args()
-        input_directory_path = args.input_directory_path
-        print(f"input_directory_path: {input_directory_path}")
+
+        input_raw_path = args.input_raw_path
+        print(f"input_raw_path: {input_raw_path}")
 
         output_directory_path = args.output_directory_path
         print(f"output_directory_path: {output_directory_path}")
@@ -85,29 +91,29 @@ if __name__ == '__main__':
         print(f"spot_data_filename: {spot_data_filename}")
 
 
-        if args.channel_subset:
-            assert len(args.channel_subset) >= 2, "Please provide at least 2 channels"
-            for ch in args.channel_subset:
-                pattern = "^[R|G|B](\d{3})$"
-                match = re.search(pattern, ch)
-                if not match:
-                    print(f"{ch} doesn't match format, e.g. R365")
-                    exit(-1)
-
-            channel_names = args.channel_subset
-        else:
-            channel_names = ['R365', 'G365', 'B365', 'R445', 'G445', 'B445', 'R525', 'G525', 'B525', 'R590', 'G590', 'B590', 'R645', 'G645', 'B645']
-
         spot_names_subset = None
         if args.spot_subset:
             spot_names_subset = list(set(args.spot_subset))
 
     else:
-
         input_directory_path = ''
         spot_data_filename = ''
         roiset_file_path = ''
         output_directory_path = ''
-        channel_names = ['R365', 'G365', 'B365', 'R445']
+        spot_names_subset = ['R365', 'G365', 'B365', 'R445']
 
-    ziontools.calculate_and_apply_transformation(spot_data_filename, roiset_file_path, input_directory_path, output_directory_path, channel_names, spot_names_subset)
+    #
+    fig = ziontools.calculate_and_apply_transformation(
+        spot_data_filename,
+        roiset_file_path,
+        input_raw_path,
+        output_directory_path,
+        args.channel_subset,
+        spot_names_subset
+    )
+
+    fig.write_image(os.path.join(output_directory_path, "bar.png"), scale=1.5)
+
+    if args.show_graph:
+        fig.show()
+

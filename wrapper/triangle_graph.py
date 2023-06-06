@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 
 import argparse
-import sys
-sys.path.insert(0, "/home/domibel/454_Bio/tools_playground/")
+import re
 import ziontools
 
 
@@ -20,7 +19,7 @@ if __name__ == '__main__':
         action='store',
         type=argparse.FileType('r'),
         dest='input_csv',
-        help = "Spot pixel data file, e.g.: /tmp/spot_pixel_data.csv"
+        help="Spot pixel data file, e.g.: /tmp/spot_pixel_data.csv"
     )
 
     parser.add_argument(
@@ -52,7 +51,6 @@ if __name__ == '__main__':
 
     parser.add_argument(
         "-o", "--output",
-        required=True,
         type=argparse.FileType('w'),
         action='store',
         dest='output_image',
@@ -68,9 +66,6 @@ if __name__ == '__main__':
     )
 
     args = parser.parse_args()
-
-    outputfilename = args.output_image.name
-    print(f"output_image filename: {outputfilename}")
 
     rgb_mix = None
     if args.rgb_mix:
@@ -98,14 +93,16 @@ if __name__ == '__main__':
         rgb_mix
     )
 
-    print(f"Generate figure ...")
+    print(f"Generate plotly plot ...")
 #    plot1 = plot(fig, output_type='div')
 
-    print(f"Write {outputfilename} ...")
-#    fig.write_image(outputfilename.replace(".png", ".svg"))
-    fig.write_image(outputfilename, scale=1.5)
+    if args.output_image:
+        image_filename = args.output_image.name
+        print(f"Write {image_filename} ...")
+        #fig.write_image(image_filename.replace(".png", ".svg"))
+        fig.write_image(image_filename, scale=1.5)
 
     if args.show_graph:
+        print(f"Show graph in browser ...")
         fig.show()
 
-    print("done")
