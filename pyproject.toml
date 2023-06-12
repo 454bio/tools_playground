@@ -1,3 +1,13 @@
 [build-system]
 requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
+
+[project]
+name = "ziontools"
+dependencies = [
+    "pandas",
+]
+version='0.2.0'
+
+[tool.setuptools.packages]
+find = {}
