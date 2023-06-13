@@ -1,5 +1,9 @@
 #!/usr/bin/env python
 
+from pathlib import Path
+import sys
+sys.path.append(str(Path(__file__).resolve().parent.parent))
+
 import os
 import argparse
 import ziontools
