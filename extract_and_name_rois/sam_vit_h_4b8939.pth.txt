@@ -1,0 +1,1 @@
+Download the sam_vit_h4b89 model from https://github.com/facebookresearch/segment-anything
