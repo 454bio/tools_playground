@@ -12,7 +12,7 @@ import roifile
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
-from .common import get_cycle_files, default_base_color_map, default_spot_colors
+from .common import get_cycle_files, default_base_color_map, default_spot_colors, oligo_sequences
 
 def get_roi_mask(shape, rois):
 
@@ -81,7 +81,7 @@ def calculate_and_apply_transformation(
 #    df = df[df.spot.isin(["D1", "D2", "D3", "D4", "L0"])]
 
     dye_bases = ["G", "C", "A", "T"]
-    df = df[df.spot.isin(dye_bases+['BG'])]
+    df = df[df.spot_name.isin(dye_bases+['BG'])]
 
     n_features = len(channel_names)
     n_targets = len(dye_bases)
@@ -90,8 +90,8 @@ def calculate_and_apply_transformation(
     BG_threshold = 25500
     SC_threshold = 64000*4
 
-    unique_df_spots = df['spot'].unique()
-    print("spots:", unique_df_spots)
+    unique_spot_names = df['spot_name'].unique()
+    print("spots:", unique_spot_names)
     # make sure all dye_bases are in the spots_ist
 
     print("dye_bases:", dye_bases)
@@ -121,7 +121,7 @@ def calculate_and_apply_transformation(
     # (n_targets, n_features)
     # Y is a 2D matrix
     Y = np.zeros((len(df), n_targets))
-    for i, base_spotname in enumerate(df['spot']):
+    for i, base_spotname in enumerate(df['spot_name']):
         if base_spotname != "BG":
             Y[i, dye_spot_to_index_map[base_spotname]] = 1
 #        else:
@@ -176,7 +176,7 @@ def calculate_and_apply_transformation(
             image[image < offset] = offset
             image -= offset
 
-            print(f"RGB image shap: {image.shape}")
+            print(f"RGB image shape: {image.shape}")
             image_map['R'+str(wavelength)] = image[:, :, 0]
             image_map['G'+str(wavelength)] = image[:, :, 1]
             image_map['B'+str(wavelength)] = image[:, :, 2]
@@ -214,7 +214,8 @@ def calculate_and_apply_transformation(
                 print(roi.name, roi.top, roi.bottom, roi.left, roi.right, roi.roitype, roi.subtype, roi.options, roi.version, roi.props, roi.position)
 
             dict_entry = {
-                'spot': roi.name.lstrip('spot'),
+                'spot_index': j+1,
+                'spot_name': roi.name,
                 'cycle': cycle,
             }
             # base vector coefficients
@@ -282,7 +283,7 @@ def calculate_and_apply_transformation(
 
     # create final dataframe
     df = pd.DataFrame(rows_list)
-    df.sort_values(by=['spot', 'cycle'], inplace=True)
+    df.sort_values(by=['spot_index', 'spot_name', 'cycle'], inplace=True)
 #           print(f"Writing {outputfilename}")
     df.to_csv(os.path.join(output_directory_path, "color_transformed_spots.csv"), index=False)
     print(df.to_string(index=False))
@@ -318,50 +319,23 @@ def calculate_and_apply_transformation(
     '''
 
     if spot_names_subset:
-        unique_spot_names = spot_names_subset
-    else:
-        unique_spot_names = list(df['spot'].unique())
+        df = df[df.spot_name.isin(spot_names_subset)]
 
-    spot_names = []
-    spot_names.insert(0, unique_spot_names.pop(unique_spot_names.index('T')))
-    spot_names.insert(0, unique_spot_names.pop(unique_spot_names.index('A')))
-    spot_names.insert(0, unique_spot_names.pop(unique_spot_names.index('C')))
-    spot_names.insert(0, unique_spot_names.pop(unique_spot_names.index('G')))
-    s_list = [a for a in unique_spot_names if a.startswith('S')]
-    s_list.sort(key=lambda v: int(v.strip('S')))
-    x_list = [a for a in unique_spot_names if a.startswith('X')]
-    x_list.sort(key=lambda v: int(v.strip('X')))
-    spot_names.extend(s_list)
-    spot_names.extend(x_list)
-    spot_names.append(unique_spot_names.pop(unique_spot_names.index('BG')))
-
-    # fixed order
-    '''
-    spot_names = [
-        'G', 'C', 'A', 'T',
-        'S1', 'S2', 'S3', 'S4',
-        'S5', 'S6', 'S7', 'S8',
-        'S9', 'S10', 'S11', 'S12',
-        'S13', 'S14', 'S15', 'S16',
-        'S17', 'S18', 'S19', 'S20',
-        'X1', 'X2', 'X3', 'BG'
-    ]
-    '''
-
-    print(spot_names)
+    spot_indizes = df.spot_index.unique()
 
     cols = 4
     fig = make_subplots(
-        rows=math.ceil(len(spot_names)/cols), cols=cols
+        rows=math.ceil(len(spot_indizes)/cols), cols=cols
     )
 
-    for i, spot_name in enumerate(spot_names):
+    for i, spot_index in enumerate(spot_indizes):
 
         r = (i // cols)+1
         c = (i % cols)+1
 
-        df_spot = df.loc[(df['spot'] == spot_name)]
-        print(f"spot: {i} , {spot_name}  row={r}, col={c}")
+        df_spot = df.loc[(df['spot_index'] == spot_index)]
+        spot_name = df_spot.spot_name.unique()[0]
+        print(f"spot: {i} , {spot_index} {spot_name}  row={r}, col={c}")
 
         # Add traces
         for base_spot_name in dye_bases:
@@ -394,7 +368,7 @@ def calculate_and_apply_transformation(
 
 
         fig.update_xaxes(
-            title_text=spot_name,
+            title_text=str(spot_index) + '  ' + spot_name + "  (" + oligo_sequences.get(spot_name, "")[:16] + ")",
             title_font={"size": 24},
             row=r, col=c)
 

@@ -11,7 +11,7 @@ from .common import default_base_color_map, default_spot_colors
 def plot_triangle(
         spot_data_filename: str,
         channel_subset: list[str],
-        spot_subset: list[str],
+        spot_names_subset: list[str],
         rgb_mix
 ):
 
@@ -42,9 +42,9 @@ def plot_triangle(
 
     print(len(channels), "channels: ", channels)
 
-    unique_spots = df['spot'].unique()
-    if spot_subset:
-        spots = [s for s in spot_subset if s in unique_spots]
+    unique_spots = df['spot_name'].unique()
+    if spot_names_subset:
+        spots = [s for s in spot_names_subset if s in unique_spots]
         unique_spots = set(spots)
 
     # add random colors
@@ -52,6 +52,9 @@ def plot_triangle(
     for i, s in enumerate(unique_spots):
         if s not in spot_color_map:
             spot_color_map[s] = default_spot_colors[i % 5]
+
+    if spot_names_subset:
+        df = df[df.spot_name.isin(spot_names_subset)]
 
     print(len(unique_spots), "unique_spots: ", unique_spots)
 
@@ -65,6 +68,8 @@ def plot_triangle(
         'R645': 35000, 'G645': 15000, 'B645': 10000,
     }
 
+    spot_indizes = df.spot_index.unique()
+
     print(f"Generate triangle subplots:")
     fig = make_subplots(
         rows=len(channels) - 1, cols=len(channels) - 1,  # e.g. 14x14
@@ -76,9 +81,10 @@ def plot_triangle(
                 continue
             print(f"{y_channel}x{x_channel} ", end=" ", flush=True)
 
-            for s in unique_spots:
+            for spot_index in spot_indizes:
                 # one spot
-                df_spot = df.loc[(df['spot'] == s)]
+                df_spot = df.loc[(df['spot_index'] == spot_index)]
+                spot_name = df_spot.spot_name.unique()[0]
 
                 fig.add_trace(
                     go.Scatter(
@@ -86,10 +92,10 @@ def plot_triangle(
                         y=df_spot[y_channel],
                         text='#' + df_spot['pixel_i'].astype(str) + '_y' + df_spot['r'].astype(str) + '_x' + df_spot[
                             'c'].astype(str),
-                        marker_color=spot_color_map[s],
+                        marker_color=spot_color_map[spot_name],
                         marker=dict(size=2),
                         mode='markers',
-                        name=str(s),
+                        name=str(spot_name),
                         legendgroup=s, showlegend=(r == 1 and c == 0)
                     ),
                     row=r, col=c + 1

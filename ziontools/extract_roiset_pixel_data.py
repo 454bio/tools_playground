@@ -127,7 +127,8 @@ def extract_roiset_pixel_data(
 
         if new_format:
             dict_entry = {
-                'spot': rois[roi_index].name.lstrip('spot'),
+                'spot_index': roi_index+1,
+                'spot_name': rois[roi_index].name,
                 'pixel_i': label_counter_in_subset[label],
                 'r': r,
                 'c': c,
@@ -143,7 +144,8 @@ def extract_roiset_pixel_data(
         else:
             for wl in [365, 445, 525, 590, 645]:
                 dict_entry = {
-                    'spot': rois[roi_index].name.lstrip('spot'),
+                    'spot_index': roi_index + 1,
+                    'spot_name': rois[roi_index].name,
                     'pixel_i': label_counter_in_subset[label],
                     'r': r,
                     'c': c,
@@ -158,7 +160,7 @@ def extract_roiset_pixel_data(
 
     # create final dataframe
     df = pd.DataFrame(spot_pixel_list)
-    df.sort_values(by=['spot', 'cycle', 'timestamp_ms'], inplace=True)
+    df.sort_values(by=['spot_index', 'cycle', 'timestamp_ms'], inplace=True)
     print(f"Writing {output_csv_filename}")
     df.to_csv(output_csv_filename, index=False, lineterminator='\n')
 #    print(df.to_csv(index=False))
