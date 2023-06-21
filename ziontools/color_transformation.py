@@ -14,6 +14,9 @@ from plotly.subplots import make_subplots
 
 from .common import get_cycle_files, default_base_color_map, default_spot_colors, oligo_sequences
 
+dye_bases = ["G", "C", "A", "T"]
+
+
 def get_roi_mask(shape, rois):
 
     mask = np.zeros(shape, dtype=np.uint8)
@@ -42,6 +45,105 @@ def get_roi_mask(shape, rois):
     print(f"number of pixels per label: {sizes}")
 
     return [mask, nb_labels]
+
+
+
+def plot_bars(
+        df: pd.DataFrame,
+        title: str,
+        spot_names_subset: list[str] = None
+):
+    if spot_names_subset:
+        df = df[df.spot_name.isin(spot_names_subset)]
+
+    spot_indizes = df.spot_index.unique()
+
+    '''
+    # Create figure with secondary x-axis
+#    fig = go.Figure(layout=layout)
+    layout = go.Layout(
+        title="Basecalls, Spot " + spot_name,
+        xaxis=XAxis(
+            title="Cycles"
+        ),
+        xaxis2=XAxis(
+            title="ACGT",
+            overlaying='x',
+            side='top',
+        ),
+        yaxis=dict(
+            title="Y values"
+        ),
+    )
+    '''
+
+    cols = 4
+    fig = make_subplots(
+        rows=math.ceil(len(spot_indizes)/cols), cols=cols
+    )
+
+    for i, spot_index in enumerate(spot_indizes):
+
+        r = (i // cols)+1
+        c = (i % cols)+1
+
+        df_spot = df.loc[(df['spot_index'] == spot_index)]
+        spot_name = df_spot.spot_name.unique()[0]
+        print(f"spot: {i} , {spot_index} {spot_name}  row={r}, col={c}")
+
+        # Add traces
+        for base_spot_name in dye_bases:
+            fig.add_trace(
+                # Scatter, Bar
+                go.Bar(
+                    x=df_spot['cycle'],
+                    y=df_spot[base_spot_name],
+                    name=base_spot_name,
+                    marker_color=default_base_color_map[base_spot_name],
+                    legendgroup=base_spot_name, showlegend=(i == 0)
+                ),
+                row=r, col=c
+            )
+
+        fig.add_trace(
+            # Scatter, Bar
+            go.Scatter(
+                x=df_spot['cycle'],
+                y=df_spot['G']/1000000+1,
+                text=df_spot[dye_bases].idxmax(axis=1),  # column with the highest value
+                marker_color="black",
+                mode="text",
+                textposition="top center",
+                textfont_size=26,
+                showlegend=False
+            ),
+            row=r, col=c
+        )
+
+        fig.update_xaxes(
+            title_text=str(spot_index) + '  ' + spot_name + "  (" + oligo_sequences.get(spot_name, "")[:16] + ")",
+            title_font={"size": 24},
+            row=r, col=c
+        )
+
+        fig.update_yaxes(
+            range=[-0.2, 1.2],
+            row=r, col=c
+        )
+
+    fig.update_layout(
+        height=3000,
+        width=3000,
+        title_text=title
+    )
+
+    fig.update_layout(
+        legend=dict(title_font_family="Times New Roman",
+                    font=dict(size=40)
+                    )
+    )
+
+    return fig
 
 
 def calculate_and_apply_transformation(
@@ -80,7 +182,6 @@ def calculate_and_apply_transformation(
     # only look at these spots
 #    df = df[df.spot.isin(["D1", "D2", "D3", "D4", "L0"])]
 
-    dye_bases = ["G", "C", "A", "T"]
     df = df[df.spot_name.isin(dye_bases+['BG'])]
 
     n_features = len(channel_names)
@@ -288,98 +389,5 @@ def calculate_and_apply_transformation(
     df.to_csv(os.path.join(output_directory_path, "color_transformed_spots.csv"), index=False)
     print(df.to_string(index=False))
 
-    '''
-    spot1:
-    A  G  C  T
-                  c1
-                  c2
-                  c3
-                  ..
-                  c16    
-    '''
-
-
-    '''
-    # Create figure with secondary x-axis
-#    fig = go.Figure(layout=layout)
-    layout = go.Layout(
-        title="Basecalls, Spot " + spot_name,
-        xaxis=XAxis(
-            title="Cycles"
-        ),
-        xaxis2=XAxis(
-            title="ACGT",
-            overlaying='x',
-            side='top',
-        ),
-        yaxis=dict(
-            title="Y values"
-        ),
-    )
-    '''
-
-    if spot_names_subset:
-        df = df[df.spot_name.isin(spot_names_subset)]
-
-    spot_indizes = df.spot_index.unique()
-
-    cols = 4
-    fig = make_subplots(
-        rows=math.ceil(len(spot_indizes)/cols), cols=cols
-    )
-
-    for i, spot_index in enumerate(spot_indizes):
-
-        r = (i // cols)+1
-        c = (i % cols)+1
-
-        df_spot = df.loc[(df['spot_index'] == spot_index)]
-        spot_name = df_spot.spot_name.unique()[0]
-        print(f"spot: {i} , {spot_index} {spot_name}  row={r}, col={c}")
-
-        # Add traces
-        for base_spot_name in dye_bases:
-            fig.add_trace(
-                # Scatter, Bar
-                go.Bar(
-                    x=df_spot['cycle'],
-                    y=df_spot[base_spot_name],
-                    name=base_spot_name,
-                    marker_color=default_base_color_map[base_spot_name],
-                    legendgroup=base_spot_name, showlegend=(i == 0)
-                ),
-                row=r, col=c
-            )
-
-        fig.add_trace(
-            # Scatter, Bar
-            go.Scatter(
-                x=df_spot['cycle'],
-                y=df_spot['G']/1000000+1,
-                text=df_spot[dye_bases].idxmax(axis=1),  # column with the highest value
-                marker_color="black",
-                mode="text",
-                textposition="top center",
-                textfont_size=26,
-                showlegend=False
-            ),
-            row=r, col=c
-        )
-
-
-        fig.update_xaxes(
-            title_text=str(spot_index) + '  ' + spot_name + "  (" + oligo_sequences.get(spot_name, "")[:16] + ")",
-            title_font={"size": 24},
-            row=r, col=c)
-
-        fig.update_yaxes(range=[-0.2, 1.2], row=r, col=c)
-
-    fig.update_layout(height=3000, width=3000,
-                      title_text=input_directory_path)
-
-    fig.update_layout(legend=dict(title_font_family="Times New Roman",
-                                  font=dict(size=40)
-                                  ))
-
-    return fig
-
+    title = input_directory_path
+    plot_bars(df, title, spot_names_subset)
