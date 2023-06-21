@@ -89,7 +89,7 @@ def plot_bars(
 
         df_spot = df.loc[(df['spot_index'] == spot_index)]
         spot_name = df_spot.spot_name.unique()[0]
-        print(f"spot: {i} , {spot_index} {spot_name}  row={r}, col={c}")
+        print(f"spot: {i}, idx: {spot_index}, name: {spot_name}, row={r}, col={c}")
 
         # Add traces
         for base_spot_name in dye_bases:
