@@ -20,6 +20,21 @@ default_base_color_map = {
     'BG': 'lightgrey'
 }
 
+oligo_sequences = {
+    '372': 'ATGCAGTCGACGTACTATGCAGTCGACGTACT',
+    '373': 'CGTATCGACTATGCAGCGTATCGACTATGCAG',
+    '375': 'GACTCGATGCTCAGTAGACTCGATGCTCAGTA',
+    '379': 'TCAGTACGATGACTGCTCAGTACGATGACTGC',
+    '574': 'GGGGGGGGGGGG',
+    '575': 'AAAAAAAAAAAA',
+    '576': 'CCCCCCCCCCCC',
+    '577': 'TTTTTTTTTTTT',
+    '632': 'AAATGCAGTCGACGTACTATGCAGTC',
+    '633': 'CCCGTATCGACTATGCAGCGTATCGA',
+    '634': 'GGGACTCGATGCTCAGTAGACTCGAT',
+    '635': 'TTTCAGTACGATGACTGCTCAGTACG',
+}
+
 def get_cycle_files(inputpath: str) -> pd.DataFrame:
 
     file_names = sorted(glob.glob(inputpath + "/*tif", recursive=False))
