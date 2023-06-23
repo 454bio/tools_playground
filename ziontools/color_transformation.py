@@ -259,12 +259,12 @@ def calculate_and_apply_transformation(
     print("cycles:", nb_cycles)
 #    nb_cycles = 8
 
-    for cycle in range(1, nb_cycles):
+    for cycle in range(1, nb_cycles+1):
         image_map = {}
 
         print("Apply transformation matrix on:")
         cyclefilenames = (df_files[df_files['cycle'] == cycle]).tail(5)
-        print("c:", cycle, cyclefilenames.to_string())
+        print("cycle:", cycle, cyclefilenames.to_string())
         cycle_timestamp = cyclefilenames.iloc[0]['timestamp']
 
         for i, cyclefilename in cyclefilenames.iterrows():
