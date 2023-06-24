@@ -52,7 +52,7 @@ def plot_bars(
         df: pd.DataFrame,
         title: str,
         spot_names_subset: list[str] = None
-):
+) -> go.Figure:
     if spot_names_subset:
         df = df[df.spot_name.isin(spot_names_subset)]
 
@@ -153,7 +153,7 @@ def calculate_and_apply_transformation(
         output_directory_path: str,
         channel_names_subset: list[str],
         spot_names_subset: list[str]
-):
+) -> pd.DataFrame:
     if channel_names_subset:
         assert len(channel_names_subset) >= 2, "Please provide at least 2 channels"
         for ch in channel_names_subset:
@@ -383,11 +383,11 @@ def calculate_and_apply_transformation(
             plt.show()
 
     # create final dataframe
-    df = pd.DataFrame(rows_list)
-    df.sort_values(by=['spot_index', 'spot_name', 'cycle'], inplace=True)
+    df_out = pd.DataFrame(rows_list)
+    df_out.sort_values(by=['spot_index', 'spot_name', 'cycle'], inplace=True)
 #           print(f"Writing {outputfilename}")
-    df.to_csv(os.path.join(output_directory_path, "color_transformed_spots.csv"), index=False)
-    print(df.to_string(index=False))
+    df_out.to_csv(os.path.join(output_directory_path, "color_transformed_spots.csv"), index=False)
+    print(df_out.to_string(index=False))
 
-    title = input_directory_path
-    plot_bars(df, title, spot_names_subset)
+    return df_out
+

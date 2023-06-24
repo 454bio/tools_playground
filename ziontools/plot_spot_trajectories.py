@@ -9,7 +9,7 @@ def plot_spot_trajectories(
         input_metrics_filename: str,
         channel_names_subset: list[str],
         spot_names_subset: list[str]
-):
+) -> go.Figure:
 
     df = pd.read_csv(input_metrics_filename)
     print(df)

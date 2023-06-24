@@ -13,7 +13,7 @@ def plot_triangle(
         channel_subset: list[str],
         spot_names_subset: list[str],
         rgb_mix
-):
+) -> go.Figure:
 
     print(f"input_csv filename: {spot_data_filename}")
 

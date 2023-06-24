@@ -107,7 +107,7 @@ if __name__ == '__main__':
         spot_names_subset = ['R365', 'G365', 'B365', 'R445']
 
     #
-    fig = ziontools.calculate_and_apply_transformation(
+    df = ziontools.calculate_and_apply_transformation(
         spot_data_filename,
         roiset_file_path,
         input_raw_path,
@@ -115,6 +115,9 @@ if __name__ == '__main__':
         args.channel_subset,
         spot_names_subset
     )
+
+    title = input_raw_path
+    fig = ziontools.plot_bars(df, title, spot_names_subset)
 
     fig.write_image(os.path.join(output_directory_path, "bar.png"), scale=1.5)
 
