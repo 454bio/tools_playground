@@ -384,10 +384,10 @@ fig.write_image(os.path.join(output_directory_path, "dephased_basecalls.png"), s
 
 fig.show()
 
-
 # Reorder the rows based on spot_names list
 df['spot'] = pd.Categorical(df['spot'], categories=spot_names, ordered=True)
-df = df.sort_values('spot').reset_index(drop=True)
+df['cycle'] = df['cycle'].astype(int)  # Convert cycle column to integer for proper sorting
+df = df.sort_values(['spot', 'cycle']).reset_index(drop=True)
 
 # Save the reordered data frame to a CSV file
 output_file_path = Path(output_directory_path) / "dephased_spots.csv"
