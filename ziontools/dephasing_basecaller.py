@@ -384,6 +384,15 @@ fig.write_image(os.path.join(output_directory_path, "dephased_basecalls.png"), s
 
 fig.show()
 
+
+# Reorder the rows based on spot_names list
+df['spot'] = pd.Categorical(df['spot'], categories=spot_names, ordered=True)
+df = df.sort_values('spot').reset_index(drop=True)
+
+# Save the reordered data frame to a CSV file
+output_file_path = Path(output_directory_path) / "dephased_spots.csv"
+df.to_csv(output_file_path, index=False)
+
 # Concatenate all spot DataFrames into a single DataFrame
 result_df = pd.concat(spot_dataframes, ignore_index=True)
 
@@ -392,7 +401,7 @@ result_df['Spot'] = pd.Categorical(result_df['Spot'], categories=spot_names, ord
 result_df = result_df.sort_values('Spot').reset_index(drop=True)
 
 # Save the reordered data frame to a CSV file
-output_file_path = Path(output_directory_path) / "basecaller_spots_output.csv"
+output_file_path = Path(output_directory_path) / "dephased_basecalls.csv"
 result_df.to_csv(output_file_path, index=False)
 
 print(result_df.to_string(index=False))
