@@ -91,7 +91,7 @@ color_transformation.py \
 
 4. Generate Dephased Basecalls and Graph
 ```
-standalone_dephaser.py \
+dephased_basecaller.py \
     -spots \Users\akshitapanigrahi\Desktop\S0189_color_transformed_spots.csv
     -o \Users\akshitapanigrahi\Desktop
     -grid
