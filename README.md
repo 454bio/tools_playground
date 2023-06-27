@@ -70,8 +70,6 @@ color_transformation.py \
     -p /mnt/nas_share/GoogleData/InstrumentData/MK27_02/20230517_1458_S0115_0001/analysis/roi_pixel_data.csv \
     -o /tmp
 
-
-
 cd /mnt/nas_share/GoogleData/InstrumentData/MK27_02/20230517_1458_S0115_0001
 
 extract_roiset_pixel_data.py \
@@ -89,4 +87,12 @@ color_transformation.py \
     -s A C G T BG S1 S2 \
     -o /tmp
 
+```
+
+4. Generate Dephased Basecalls and Graph
+```
+standalone_dephaser.py \
+    -spots \Users\akshitapanigrahi\Desktop\S0189_color_transformed_spots.csv
+    -o \Users\akshitapanigrahi\Desktop
+    -grid
 ```
