@@ -180,7 +180,7 @@ def GridSearch(data, spot_name):
 
 #Break up color transformed spot data into arrays of spot dye counts
 df = pd.read_csv(spot_data, sep=',')
-spots = df['spot'].unique()
+spots = df['spot_name'].unique()
 
 spot_arrays = []
 spot_dataframes = []
@@ -188,7 +188,7 @@ spot_dataframes = []
 undephased_basecalls = []
 
 for spot in spots:
-    spot_df = df[df['spot'] == spot]
+    spot_df = df[df['spot_name'] == spot]
     counts = spot_df[['G', 'C', 'A', 'T']].values
     
     undephased_basecall = ''
@@ -300,6 +300,7 @@ spot_names.insert(0, unique_spot_names.pop(unique_spot_names.index('T')))
 spot_names.insert(0, unique_spot_names.pop(unique_spot_names.index('A')))
 spot_names.insert(0, unique_spot_names.pop(unique_spot_names.index('C')))
 spot_names.insert(0, unique_spot_names.pop(unique_spot_names.index('G')))
+spot_names.insert(0, unique_spot_names.pop(unique_spot_names.index('BG')))
 
 s_list = [a for a in unique_spot_names if a.startswith('S')]
 s_list.sort(key=lambda v: int(v.strip('S')))
@@ -307,7 +308,6 @@ x_list = [a for a in unique_spot_names if a.startswith('X')]
 x_list.sort(key=lambda v: int(v.strip('X')))
 spot_names.extend(s_list)
 spot_names.extend(x_list)
-spot_names.append(unique_spot_names.pop(unique_spot_names.index('BG')))
 
 # fixed order
 '''
