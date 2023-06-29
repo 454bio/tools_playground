@@ -241,12 +241,12 @@ for i, spot_data in enumerate(spot_arrays):
                               'Ground Truth Basecalls': correct,
                               'Basecalls Post Color Transformation': undephased_basecalls[i],
                               'Basecalls Post Dephasing': [results['basecalls']],
-                              'Read Length: Post Dephasing': [dephased_read_length],
                               'Read Length: Color Transformation': [color_transform_read_length],
+                              'Read Length: Post Dephasing': [dephased_read_length],
                               'Greater Read Length': [greater_read_length],
-                              '#Differences: Ground Truth vs Dephased': sum(char1 != char2 for char1, char2 in zip(correct, [results['basecalls']][0])),
                               '#Differences: Ground Truth vs Color Transform': sum(char1 != char2 for char1, char2 in zip(correct, undephased_basecalls[i])),
-                              'CumulativeError': [results['err']]})
+                              '#Differences: Ground Truth vs Dephased': sum(char1 != char2 for char1, char2 in zip(correct, [results['basecalls']][0])),
+                              'Cumulative Error': [results['err']]})
     
     if spot_names[i] == 'BG':
         spot_row = pd.DataFrame({'Spot Index': [spot_indices[i]],
@@ -255,12 +255,12 @@ for i, spot_data in enumerate(spot_arrays):
                                   'Ground Truth Basecalls': 'N/A',
                                   'Basecalls Post Color Transformation': undephased_basecalls[i],
                                   'Basecalls Post Dephasing': [results['basecalls']],
-                                  'Read Length: Post Dephasing': 'N/A',
                                   'Read Length: Color Transformation': 'N/A',
+                                  'Read Length: Post Dephasing': 'N/A',
                                   'Greater Read Length': 'N/A',
-                                  '#Differences: Ground Truth vs Dephased': 'N/A',
-                                  '#Differences: Ground Truth vs Color Transform': 'N/A',
-                                  'CumulativeError': [results['err']]})
+                                  '#Differences: Ground Truth vs Color Transform': 'N/A',                                 
+                                  '#Differences: Ground Truth vs Dephased': 'N/A',                                
+                                  'Cumulative Error': [results['err']]})
     
     # Append the spot DataFrame to the spot_dataframes list
     spot_dataframes.append(spot_row)
