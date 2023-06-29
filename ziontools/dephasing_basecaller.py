@@ -8,7 +8,7 @@ from pathlib import Path
 import pandas as pd
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-from common import get_cycle_files, default_base_color_map, default_spot_colors
+from common import oligo_sequences, get_cycle_files, default_base_color_map, default_spot_colors
 import os
 
 import math
@@ -16,26 +16,17 @@ import math
 verbose = 0
 wantPlots = False
 gridsearch = False
-
-# if set to true, we will perform a fit across the measured data, and correct out any signal loss
-# note that the dr (droop) param is then set to 0.0 for the model predictions
 correctLoss = False
 
 bases = ['G', 'C', 'A', 'T']
 base_colors = ['green', 'yellow', 'blue', 'red']
 
-# ie - the percent of product that does not incorporate
-# cf - the percent of product that can incorpporate subsequent positions during UV cleavage
-# dr - ther percent of product lost at each UV cycle (modeled as a system-wide param)
 ie = 0.09
 cf = 0.065
 dr = 0.02
 
-spot_data = ''
-output_directory_path = ''
-
-# easy to create alternate models to represent the physical system
-# state_model selects which one to use
+spot_data = '/Users/akshitapanigrahi/Desktop/S0228color_transformed_spots.csv'
+output_directory_path = '/Users/akshitapanigrahi/Desktop'
 state_model = 'default' # [default,dark]
 
 argc = len(sys.argv)
@@ -68,16 +59,6 @@ while argcc < argc:
         argcc += 1
         output_directory_path = sys.argv[argcc]
     argcc += 1
-
-#
-# CallBases
-#
-# Uses a physical model to predict what the measured signal would be after a UV cycle is applied
-# performs predictions with an initially blank DNA template, so on the first pass only
-# incompletion and signal loss (droop) can be accounted for.  On the second and subsequent
-# passes, the model is able to improve signal predictions because it has a rough idea of the DNA
-# template being sequenced, carry-forward in particual can now be accounted for correctly
-#
 
 def CallBases(ie, cf, dr, numCycles, measuredSignal):
     dnaTemplate = ''
@@ -180,15 +161,17 @@ def GridSearch(data, spot_name):
 
 #Break up color transformed spot data into arrays of spot dye counts
 df = pd.read_csv(spot_data, sep=',')
-spots = df['spot_name'].unique()
+unique_spots = df.drop_duplicates(subset='spot_index')[['spot_index', 'spot_name']]
+spot_indices = unique_spots['spot_index'].tolist()
+spot_names = unique_spots['spot_name'].tolist()
 
 spot_arrays = []
 spot_dataframes = []
 
 undephased_basecalls = []
 
-for spot in spots:
-    spot_df = df[df['spot_name'] == spot]
+for spot_index in spot_indices:
+    spot_df = df[df['spot_index'] == spot_index]
     counts = spot_df[['G', 'C', 'A', 'T']].values
     
     undephased_basecall = ''
@@ -199,12 +182,16 @@ for spot in spots:
     undephased_basecalls.append(undephased_basecall)
 
 # Perform base call for each spot
+
+# Create an empty data frame
+df = pd.DataFrame(columns=['spot_index', 'spot_name', 'cycle', 'G', 'C', 'A', 'T'])
+
 for i, spot_data in enumerate(spot_arrays):
     numCycles = spot_data.shape[0]
-    print('Spot: ' + spots[i] + ', #cycles: %d' % numCycles)
+    print('Spot Index: ' + str(spot_indices[i]) + ', Spot Name: ' + str(spot_names[i]) + ', #cycles: %d' % numCycles)
 
     if gridsearch:
-        ie,cf,dr = GridSearch(spot_data, spots[i])
+        ie,cf,dr = GridSearch(spot_data, spot_names[i])
     
     if correctLoss:
         measuredSignal = CorrectSignalLoss(spot_data)
@@ -216,70 +203,72 @@ for i, spot_data in enumerate(spot_arrays):
     
     print('cumulative error: %f' % results['err'])
     print('')
+    
+    correct = ''
+    
+    if spot_names[i] in ['G', 'C', 'A', 'T']:
+        oligo_num = input('What is oligo number for base spot ' + spot_names[i])
+        correct = oligo_sequences.get(oligo_num)[:numCycles]
+    elif spot_names[i] != 'BG':
+        correct = oligo_sequences.get(spot_names[i])[:numCycles]
+        
+    # Calculate read length for color transformation
+    color_transform_read_length = numCycles
+    for j, (char1, char2) in enumerate(zip(correct, undephased_basecalls[i])):
+        if char1 != char2:
+            color_transform_read_length = j
+            break
+
+    # Calculate read length for post dephasing
+    dephased_read_length = numCycles
+    for j, (char1, char2) in enumerate(zip(correct, results['basecalls'])):
+        if char1 != char2:
+            dephased_read_length = j
+            break
+
+    # Determine the greater read length
+    if color_transform_read_length > dephased_read_length:
+        greater_read_length = 'CT'
+    elif color_transform_read_length < dephased_read_length:
+        greater_read_length = 'D'
+    else:
+        greater_read_length = 'E'
         
     # Create a new DataFrame for the spot
-    spot_row = pd.DataFrame({'Spot': [spots[i]],
+    spot_row = pd.DataFrame({'Spot Index': [spot_indices[i]],
+                             'Spot Name': [spot_names[i]],
                               'NumCycles': [numCycles],
+                              'Ground Truth Basecalls': correct,
                               'Basecalls Post Color Transformation': undephased_basecalls[i],
                               'Basecalls Post Dephasing': [results['basecalls']],
+                              'Read Length: Post Dephasing': [dephased_read_length],
+                              'Read Length: Color Transformation': [color_transform_read_length],
+                              'Greater Read Length': [greater_read_length],
+                              '#Differences: Ground Truth vs Dephased': sum(char1 != char2 for char1, char2 in zip(correct, [results['basecalls']][0])),
+                              '#Differences: Ground Truth vs Color Transform': sum(char1 != char2 for char1, char2 in zip(correct, undephased_basecalls[i])),
                               'CumulativeError': [results['err']]})
     
-    if (spots[i] == 'BG'):
-        spot_row = pd.DataFrame({'Spot': [spots[i]],
+    if spot_names[i] == 'BG':
+        spot_row = pd.DataFrame({'Spot Index': [spot_indices[i]],
+                                 'Spot Name': [spot_names[i]],
                                   'NumCycles': [numCycles],
+                                  'Ground Truth Basecalls': 'N/A',
                                   'Basecalls Post Color Transformation': undephased_basecalls[i],
                                   'Basecalls Post Dephasing': [results['basecalls']],
+                                  'Read Length: Post Dephasing': 'N/A',
+                                  'Read Length: Color Transformation': 'N/A',
+                                  'Greater Read Length': 'N/A',
+                                  '#Differences: Ground Truth vs Dephased': 'N/A',
+                                  '#Differences: Ground Truth vs Color Transform': 'N/A',
                                   'CumulativeError': [results['err']]})
-
     
     # Append the spot DataFrame to the spot_dataframes list
     spot_dataframes.append(spot_row)
-    
-    # plots
-    if wantPlots:
-        fig, ax = plt.subplots()
-        fig.suptitle(spots[i] + ': predicted signals per cycle')
-        for cycle in range(numCycles):
-            for base in range(4):
-                ax.bar(cycle + base*0.1, results['intensites'][cycle, base], color = base_colors[base], width = 0.1)
-        plt.plot(range(numCycles), results['signal'], label='total intensity')
-        plt.plot(range(numCycles),  results['error'], label='error')
-        plt.legend(loc="upper right")
-    
-    
-        totalMeasuredSignal = np.sum(measuredSignal, axis=1)
-        fig, ax = plt.subplots()
-        fig.suptitle(spots[i] + ': measured signals per cycle')
-        for cycle in range(numCycles):
-            for base in range(4):
-                ax.bar(cycle + base*0.1, measuredSignal[cycle, base], color = base_colors[base], width = 0.1)
-        plt.plot(range(numCycles), totalMeasuredSignal, label='total intensity')
-        plt.show()
-
-# Create an empty data frame
-df = pd.DataFrame(columns=['spot', 'cycle', 'G', 'C', 'A', 'T'])
-
-# Perform base call for each spot
-for i, spot_data in enumerate(spot_arrays):
-    numCycles = spot_data.shape[0]
-    spot_name = spots[i]
-    print('Spot: ' + spot_name + ', #cycles: %d' % numCycles)
-
-    if gridsearch:
-        ie, cf, dr = GridSearch(spot_data, spot_name)
-    
-    if correctLoss:
-        measuredSignal = CorrectSignalLoss(spot_data)
-        dr = 0.0
-    else:
-        measuredSignal = spot_data
-    
-    results = CallBases(ie, cf, dr, numCycles, measuredSignal)
-    print('')
-    
+        
     # Create a data frame for the spot's cycle data
     cycle_df = pd.DataFrame({
-        'spot': [spot_name] * numCycles,
+        'spot_index': [spot_indices[i]] * numCycles,
+        'spot_name': [spot_names[i]] * numCycles,
         'cycle': np.arange(1, numCycles + 1),
         'G': results['intensites'][:, 0],
         'C': results['intensites'][:, 1],
@@ -290,37 +279,26 @@ for i, spot_data in enumerate(spot_arrays):
     # Append the cycle data to the main data frame
     df = pd.concat([df, cycle_df], ignore_index=True)
     
-# Print the final data frame
-#print(df.to_string(index=False))
-
-unique_spot_names = list(df['spot'].unique())
-
-spot_names = []
-spot_names.insert(0, unique_spot_names.pop(unique_spot_names.index('T')))
-spot_names.insert(0, unique_spot_names.pop(unique_spot_names.index('A')))
-spot_names.insert(0, unique_spot_names.pop(unique_spot_names.index('C')))
-spot_names.insert(0, unique_spot_names.pop(unique_spot_names.index('G')))
-spot_names.insert(0, unique_spot_names.pop(unique_spot_names.index('BG')))
-
-s_list = [a for a in unique_spot_names if a.startswith('S')]
-s_list.sort(key=lambda v: int(v.strip('S')))
-x_list = [a for a in unique_spot_names if a.startswith('X')]
-x_list.sort(key=lambda v: int(v.strip('X')))
-spot_names.extend(s_list)
-spot_names.extend(x_list)
-
-# fixed order
-'''
-spot_names = [
-    'G', 'C', 'A', 'T',
-    'S1', 'S2', 'S3', 'S4',
-    'S5', 'S6', 'S7', 'S8',
-    'S9', 'S10', 'S11', 'S12',
-    'S13', 'S14', 'S15', 'S16',
-    'S17', 'S18', 'S19', 'S20',
-    'X1', 'X2', 'X3', 'BG'
-]
-'''
+        # plots
+    if wantPlots:
+        fig, ax = plt.subplots()
+        fig.suptitle('Spot ' + str(spot_indices[i])+ ': ' + str(spot_names[i]) + ' - predicted signals per cycle')
+        for cycle in range(numCycles):
+            for base in range(4):
+                ax.bar(cycle + base*0.1, results['intensites'][cycle, base], color = base_colors[base], width = 0.1)
+        plt.plot(range(numCycles), results['signal'], label='total intensity')
+        plt.plot(range(numCycles),  results['error'], label='error')
+        plt.legend(loc="upper right")
+    
+    
+        totalMeasuredSignal = np.sum(measuredSignal, axis=1)
+        fig, ax = plt.subplots()
+        fig.suptitle('Spot ' + str(spot_indices[i])+ ': ' + str(spot_names[i]) + ' - measured signals per cycle')
+        for cycle in range(numCycles):
+            for base in range(4):
+                ax.bar(cycle + base*0.1, measuredSignal[cycle, base], color = base_colors[base], width = 0.1)
+        plt.plot(range(numCycles), totalMeasuredSignal, label='total intensity')
+        plt.show()
 
 cols = 4
 fig = make_subplots(
@@ -329,12 +307,12 @@ fig = make_subplots(
 
 dye_bases = ["G", "C", "A", "T"]
 
-for i, spot_name in enumerate(spot_names):
-
-    r = (i // cols)+1
-    c = (i % cols)+1
+# Add spot index trace
+for i, spot_index in enumerate(spot_indices):
+    r = (i // cols) + 1
+    c = (i % cols) + 1
     
-    df_spot = df.loc[(df['spot'] == spot_name)]
+    df_spot = df.loc[(df['spot_index'] == spot_index)]
 
     # Add traces
     for base_spot_name in dye_bases:
@@ -365,9 +343,8 @@ for i, spot_name in enumerate(spot_names):
         row=r, col=c
     )
 
-
     fig.update_xaxes(
-        title_text=spot_name,
+        title_text='Spot ' + str(spot_indices[i])+ ': ' + str(spot_names[i]),
         title_font={"size": 24},
         row=r, col=c)
 
@@ -385,9 +362,9 @@ fig.write_image(os.path.join(output_directory_path, "dephased_basecalls.png"), s
 fig.show()
 
 # Reorder the rows based on spot_names list
-df['spot'] = pd.Categorical(df['spot'], categories=spot_names, ordered=True)
+df['spot_index'] = pd.Categorical(df['spot_index'], categories=spot_indices, ordered=True)
 df['cycle'] = df['cycle'].astype(int)  # Convert cycle column to integer for proper sorting
-df = df.sort_values(['spot', 'cycle']).reset_index(drop=True)
+df = df.sort_values(['spot_index', 'cycle']).reset_index(drop=True)
 
 # Save the reordered data frame to a CSV file
 output_file_path = Path(output_directory_path) / "dephased_spots.csv"
@@ -396,12 +373,25 @@ df.to_csv(output_file_path, index=False)
 # Concatenate all spot DataFrames into a single DataFrame
 result_df = pd.concat(spot_dataframes, ignore_index=True)
 
-# Reorder the rows based on spot_names list
-result_df['Spot'] = pd.Categorical(result_df['Spot'], categories=spot_names, ordered=True)
-result_df = result_df.sort_values('Spot').reset_index(drop=True)
-
 # Save the reordered data frame to a CSV file
 output_file_path = Path(output_directory_path) / "dephased_basecalls.csv"
 result_df.to_csv(output_file_path, index=False)
 
+numeric_color_transform_errors = pd.to_numeric(result_df['#Differences: Ground Truth vs Color Transform'], errors='coerce')
+color_transform_error_sum = int(numeric_color_transform_errors.sum())
+
+numeric_dephased_errors = pd.to_numeric(result_df['#Differences: Ground Truth vs Dephased'], errors='coerce')
+dephased_error_sum = int(numeric_dephased_errors.sum())
+
+greater_read_length_count = result_df[result_df['Greater Read Length'] == 'D'].shape[0]
+equal_length_count = result_df[result_df['Greater Read Length'] == 'E'].shape[0]
+colt_length_count = result_df[result_df['Greater Read Length'] == 'CT'].shape[0]
+
 print(result_df.to_string(index=False))
+
+print("Summary:")
+print(greater_read_length_count, " spots where dephasing produced greater read length")
+print(colt_length_count, " spots where non-dephasing produced greater read length")
+
+print("Total #Errors, Color Transform Basecalls: ", color_transform_error_sum)
+print("Total #Errors, Dephased Basecalls: ", dephased_error_sum)
