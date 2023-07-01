@@ -1,6 +1,6 @@
 # dephasing_basecaller
 
-dephasing_basecaller.py - the basic app to perform base calling
+dephasing_basecaller.py - the basic app to perform base calling, by Mel Davey, 2023. 
 
 Does the following for each spot
 1. loads the measured signals for each dye at the start of each cycle, from output of color_transform.py
@@ -24,11 +24,20 @@ python dephasing_basecaller.py
     -o \Users\akshitapanigrahi\Desktop
 ```
 
+Performs a comparison of basecalls with ground truth basecalls. If spot name is not an oligo number in oligo_sequences (from common.py), it will ask the user for the oligo number corresponding to spot. Inputted oligo number must be in the oligo_sequences map.
+
+```python
+python dephasing_basecaller.py \
+    -spots \Users\akshitapanigrahi\Desktop\S0228_color_transformed_spots.csv
+    -o \Users\akshitapanigrahi\Desktop
+    -compare
+```
+
 Performs a grid-search over a hard-coded range of cf/ie/dr params, then performs phase correction and calls bases, on best cf/ie/dr params, for each spot
 
 ```python
 python dephasing_basecaller.py \
-    -spots \Users\akshitapanigrahi\Desktop\S0189_color_transformed_spots.csv
+    -spots \Users\akshitapanigrahi\Desktop\S0228_color_transformed_spots.csv
     -o \Users\akshitapanigrahi\Desktop
     -grid
 ```
@@ -40,10 +49,12 @@ python dephasing_basecaller.py
     -ie 0.11 
     -cf 0.080 
     -dr 0.025 
-    -spots \Users\akshitapanigrahi\Desktop\color_transformed_spots.csv 
+    -spots \Users\akshitapanigrahi\Desktop\S0228_color_transformed_spots.csv 
     -o \Users\akshitapanigrahi\Desktop
     -plots
 ```
+
+Any combination of these parameters can be sent/not sent. 
 
 ## Sample Basecall Output
 
@@ -66,8 +77,9 @@ The table is stored to a CSV, 'dephased_basecalls.csv'
 | 9          | 379       | 16        | TCAGTACGATGACTGC      | TCAGTTCTTTTTTTTT                 | TCAGTACGTACTGCTA        | 5                                 | 8                             | D                   | 8                                       | 8                                     | 2.301325666     |
 ....
 
+If -compare was not sent as a parameter, the above table is produced without the ground truth, read lengths, and #differences columns. 
 
-The program outputs a dataframe of the predicted intesities for each of the four bases over all cycles for all spots. The table is stored to a CSV, 'dephased_spots.csv'
+The program outputs a dataframe of the predicted signal intesities for each of the four dyes over all cycles for all spots. The table is stored to a CSV, 'dephased_intensities.csv'
 
 | spot_index | spot_name | cycle | G          | C          | A           | T          |
 |------------|-----------|-------|------------|------------|-------------|------------|
@@ -92,6 +104,5 @@ The program outputs a dataframe of the predicted intesities for each of the four
 | 2          | C         | 3     | 0.103164173| 0.833774479| 0.000709
 ....
 
-The program generates the base call histogram for each of the spots:
-![newplot (1)](https://github.com/454bio/tools_playground/assets/129779339/6fa3ec23-e4e8-435f-a085-6a7cbab6d60e)
-
+The program generates the predicted dye intensity histogram for each of the spots:
+![dephased_intensities](https://github.com/454bio/tools_playground/assets/129779339/5062a876-7e75-4719-a8cf-ba62150c6b33)
