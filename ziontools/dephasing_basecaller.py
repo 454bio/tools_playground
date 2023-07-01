@@ -335,7 +335,7 @@ df['cycle'] = df['cycle'].astype(int)  # Convert cycle column to integer for pro
 df = df.sort_values(['spot_index', 'cycle']).reset_index(drop=True)
 
 # Save the reordered data frame to a CSV file
-output_file_path = Path(output_directory_path) / "dephased_spots.csv"
+output_file_path = Path(output_directory_path) / "dephased_intensities.csv"
 df.to_csv(output_file_path, index=False)
 
 cols = 4
@@ -376,7 +376,7 @@ for i, spot_index in enumerate(spot_indices):
 # Configure layout and save the figure
 fig.update_layout(height=3000, width=3000, title_text='Predicted Dye Intensities')
 fig.update_layout(legend=dict(title_font_family="Times New Roman", font=dict(size=40)))
-fig.write_image(os.path.join(output_directory_path, "dephased_intensities.png"), scale=1.5)
+fig.write_image(os.path.join(output_directory_path, "dephased_intensities_plot.png"), scale=1.5)
 fig.show()
 
 # Concatenate all spot DataFrames into a single DataFrame
