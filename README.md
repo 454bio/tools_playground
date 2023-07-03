@@ -80,7 +80,7 @@ The output -o is the directory where the CSVs for the ROIs, entire ROI mask, ref
 Performs phase correction and calls bases for each spot, with default parameters
 
 ```bash
-python extract_and_name_rois_pipeline1.py 
+python extract_and_name_rois.py 
     -i /Users/akshitapanigrahi/Documents/data/1458/raws 
     -o /Users/akshitapanigrahi/data/1458/ROI_CSVs
 ```
