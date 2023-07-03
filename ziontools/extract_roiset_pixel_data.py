@@ -26,9 +26,6 @@ def extract_roiset_pixel_data(
         image_number: int = 0
 ):
 
-    df_files = get_cycle_files(input_raw_path)
-    print(df_files)
-
     # check if roifile exists
     if not pathlib.Path(roiset_zip_filename).is_file():
         print(f"Cannot open {roiset_zip_filename}")
@@ -36,6 +33,18 @@ def extract_roiset_pixel_data(
 
     rois = roifile.ImagejRoi.fromfile(roiset_zip_filename)
     print(rois)
+
+    df_files = get_cycle_files(input_raw_path)
+#    print(df_files.to_string())
+
+    # filter df_files, use the 5 images starting from the provided image number
+    if image_number > 0:
+        print("use user provided 645 image")
+        df_files = df_files.loc[(df_files['file_info_nb'] >= image_number) & (df_files['file_info_nb'] < image_number + 5)]
+    else:
+        df_files = df_files.loc[(df_files['cycle'] == 1)].tail(5)
+
+    print(df_files)
 
     # read image size from first image
     image0 = cv.imread(df_files.iloc[0]['filenamepath'], cv.IMREAD_UNCHANGED)[:, :, ::-1]  # BGR to RGB, 16bit data
@@ -75,15 +84,13 @@ def extract_roiset_pixel_data(
     sizes = np.array(list(map(max, ref_sizes, spot_sizes)))
     print(f"number of pixels per spot:\n {sizes}")
 
-    plt.imshow(ref_mask)
-    plt.show()
-    plt.imshow(spot_mask)
-    plt.show()
+    if __debug__:
+        plt.imshow(ref_mask)
+        plt.show()
+        plt.imshow(spot_mask)
+        plt.show()
 
     images = {}
-
-    # filter df, use the 5 images starting from the provided image number
-    df_files = df_files.loc[(df_files['file_info_nb'] >= image_number) & (df_files['file_info_nb'] < image_number+5)]
 
     for index, row in df_files.iterrows():
 
