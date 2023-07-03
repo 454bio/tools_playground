@@ -45,20 +45,19 @@ def get_cycle_files(inputpath: str) -> pd.DataFrame:
 
     file_names = sorted(glob.glob(inputpath + "/*tif", recursive=False))
     print(f"Found {len(file_names)} tif files.")
+    assert len(file_names) >= 5, "not enough raw files"
 
     files_list = []
     for idx, filenamepath in enumerate(file_names):
 
         filename = os.path.basename(filenamepath)
 
-        print(f"{idx}  {filename}")
-
         # extract file info
         filenameRegex = re.compile(r'(\d+)_(\d+A)_(\d+)_(\d+)_(C\d+)_(\d+).tif')
         match = filenameRegex.search(filename)
         if match:
-            print(match.groups(), type(match))
-            file_info_nb = int(match.group(3))
+#            print(match.groups(), type(match))
+            file_info_nb = int(match.group(1))
             file_info_wl = int(match.group(4))
             file_info_cy = int(match.group(5).lstrip("C"))
             file_info_ts = int(match.group(6))
@@ -76,7 +75,7 @@ def get_cycle_files(inputpath: str) -> pd.DataFrame:
             print(f"ERROR Bad filename: {filename}")
             continue
 
-        print(f"WL:{file_info_wl}  CY:{file_info_cy}  TS:{file_info_ts }")
+        print(f"{idx}  {filename}  WL:{file_info_wl:03d}  CY:{file_info_cy}  TS:{file_info_ts }")
 
     df_files = pd.DataFrame(files_list)
 
