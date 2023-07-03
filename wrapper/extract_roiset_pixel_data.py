@@ -47,7 +47,7 @@ if __name__ == '__main__':
     parser.add_argument(
         "-e", action='store',
         type=int,
-        default=0,  # all
+        default=0,  # auto
         dest='start_645_image_number',
         help="Start image number of 5 .tif image block (645, 590, 525, 445, 365) \ne.g.: -e 7  (...0007_645_C001...tif)"
     )
