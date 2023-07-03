@@ -1,92 +1,86 @@
-# tools_playground
+# extract_and_name_rois.py
 
-1. Extract basic metrics from ROIs
+Python tool to extract and name ROIs using Segment-Anything model (SAM).
 
-```
-extract_roiset_metrics_to_csv.py \
-    -i /mnt/nas_share/GoogleData/InstrumentData/MK27_02/20230504_1510_S0096_0001/raws/ \
-    -r /mnt/nas_share/GoogleData/InstrumentData/MK27_02/20230504_1510_S0096_0001/Analysis/S0096_RoiSet.zip \
-    -o S0096.csv
-```
-```
-extract_roiset_metrics_to_csv.py \
-    -i /mnt/nas_share/GoogleData/InstrumentData/MK27_02/20230504_1540_S0097_0001/raws/ \
-    -r /mnt/nas_share/GoogleData/InstrumentData/MK27_02/20230504_1540_S0097_0001/Analysis/S0097_RoiSet.zip \
-    -o S0097.csv
-```
-```
-extract_roiset_metrics_to_csv.py \
-    -i /mnt/nas_share/GoogleData/InstrumentData/MK27_02/20230504_1607_S0098_0001/raws/ \
-    -r /mnt/nas_share/GoogleData/InstrumentData/MK27_02/20230504_1607_S0098_0001/Analysis/S0098_RoiSet.zip \
-    -o S0098.csv
-```
-```
-extract_roiset_metrics_to_csv.py \
-    -i /mnt/nas_share/GoogleData/InstrumentData/MK27_02/20230504_1631_S0099_0001/raws/ \
-    -r /mnt/nas_share/GoogleData/InstrumentData/MK27_02/20230504_1631_S0099_0001/Analysis/S0099_RoiSet5.zip \
-    -o S0099.csv
-```
+## Installation
 
-```
-plot_roiset_run_comparison.py -h
+Before installing the packages, ensure that you have the following prerequisites installed on your system:
 
-plot_roiset_run_comparison.py -i S0096.csv S0097.csv S0098.csv S0099.csv -o orig.jpg
+Python (version 3.3 or higher)
+pip (Python package installer)
 
-plot_roiset_run_comparison.py -i S0096.csv S0097.csv S0098.csv S0099.csv -o normalized.jpg -n
-```
-Create browser based graph with spot trajectories
-```
-plot_spot_trajectories.py -i analysis/metrics.csv 
-plot_spot_trajectories.py -i analysis/metrics.csv -c G445 G525 R590 B445
-plot_spot_trajectories.py -i analysis/metrics.csv -s S1 S2 -c G445 G525 R590 B445
-plot_spot_trajectories.py -i analysis/metrics.csv -o analysis/trajectories.png
+### Packages and Dependencies
+
+This code requires pytorch>=1.7 and torchvision>=0.8. Please follow the instructions [here](https://pytorch.org/get-started/locally/) to install both PyTorch and TorchVision dependencies. Installing both PyTorch and TorchVision with CUDA support is strongly recommended.
+
+### Prerequisites
+
+Before installing the packages, ensure that you have the following prerequisites installed on your system:
+
+- Python (version 3.6 or higher)
+- pip (Python package installer)
+
+### Installation Steps
+
+1. Open a terminal or command prompt.
+
+2. Create a new virtual environment (optional but recommended):
+
+```bash
+python3 -m venv myenv
 ```
 
-2. Create triangle graphs
-```
-extract_roiset_pixel_data.py -i . -r RoiSet.zip -o RoiSet.csv -e 7 -n 500
+3. Activate the virtual environment:
 
-triangle_graph.py -i RoiSet.csv -o triangle.png -g -m 20 33.3 12
+**For Windows:**
 
-triangle_graph.py -i RoiSet.csv -o triangle.png -g -c G445 G525 R590 B445
-
-triangle_graph.py -i RoiSet.csv -o triangle.png -g -s A C G T BG S1 S2
-
-triangle_graph.py -i RoiSet.csv -o triangle.png -g -c G445 G525 R590 B445 -s A C G T BG S1 S2
-
+```bash
+myenv\Scripts\activate
 ```
 
+**For macOS and Linux:**
 
-3. Create basic basecaller graph
+```bash
+source myenv/bin/activate
 ```
-extract_roiset_pixel_data.py -e 7 -n 500 \
-    -i /mnt/nas_share/GoogleData/InstrumentData/MK27_02/20230517_1458_S0115_0001/raws \
-    -r /mnt/nas_share/GoogleData/InstrumentData/MK27_02/20230517_1458_S0115_0001/analysis/RoiSetJRC4_28spotsACGT.zip \
-    -o /tmp/roi_pixel_data.csv
-    
-color_transformation.py \
-    -i /mnt/nas_share/GoogleData/InstrumentData/MK27_02/20230517_1458_S0115_0001/raws \
-    -r /mnt/nas_share/GoogleData/InstrumentData/MK27_02/20230517_1458_S0115_0001/analysis/RoiSetJRC4_28spotsACGT.zip \
-    -p /mnt/nas_share/GoogleData/InstrumentData/MK27_02/20230517_1458_S0115_0001/analysis/roi_pixel_data.csv \
-    -o /tmp
 
+4. Install the remaining required packages and their dependencies using the following command:
 
+```bash
+pip install numpy scipy matplotlib opencv-python roifile pandas plotly scikit-learn
+```
 
-cd /mnt/nas_share/GoogleData/InstrumentData/MK27_02/20230517_1458_S0115_0001
+### Pulling the SAM Repository
 
-extract_roiset_pixel_data.py \
-    -e 7 \
-    -n 500 \
-    -i raws \
-    -r analysis/RoiSetJRC4_28spotsACGT.zip \
-    -o /tmp/spot_pixel_data.csv
+```bash
+pip install git+https://github.com/facebookresearch/segment-anything.git
+```
 
-color_transformation.py \
-    -i raws \
-    -r analysis/RoiSetJRC4_28spotsACGT.zip \
-    -p analysis/spot_pixel_data.csv \
-    -c G445 G525 R590 B445 \
-    -s A C G T BG S1 S2 \
-    -o /tmp
+### Additional Notes
 
+- Place the extract_and_name_rois and all other files in this repository in the main segment-anything folder that was installed via the pip install git repository command above
+- The above command installs the necessary packages, including their dependencies, in your virtual environment.
+
+- If you already have some of these packages installed, you can use the `--upgrade` flag to ensure you have the latest versions:
+
+```bash
+pip install --upgrade torch torchvision numpy scipy matplotlib opencv-python roifile pandas plotly scikit-learn
+```
+
+### Model Checkpoint
+
+Install the vit_h version of the model [here](https://dl.fbaipublicfiles.com/segment_anything/sam_vit_h_4b8939.pth)
+
+## Usage
+
+The input -i is the directory of raw images
+
+The output -o is the directory where the CSVs for the ROIs, entire ROI mask, reference mask, and spot mask are to be stored, as well as the dictionary mapping pixel value and spot name. 
+
+Performs phase correction and calls bases for each spot, with default parameters
+
+```bash
+python extract_and_name_rois_pipeline1.py 
+    -i /Users/akshitapanigrahi/Documents/data/1458/raws 
+    -o /Users/akshitapanigrahi/data/1458/ROI_CSVs
 ```
