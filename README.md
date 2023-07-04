@@ -114,4 +114,11 @@ python color_transform_automation.py
     -i /Users/akshitapanigrahi/Documents/data/193/raws_aligned_images 
     -o /Users/akshitapanigrahi/Desktop
 ```
+
+```bash
+dephased_basecaller.py \
+    -spots \Users\akshitapanigrahi\Desktop\color_transformed_spots_automated.csv
+    -o \Users\akshitapanigrahi\Desktop
+    -grid
+```
 Disclaimer: Basecalling output is as expected not great, as the ROIs are extracted for the entire spot, and the background defined as the entire area that is not a spot. These scripts were just added to see the entire downstream pipeline with the automated ROI extraction. 
