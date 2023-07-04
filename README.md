@@ -90,23 +90,28 @@ Below are command line instructions to run the remaining tools in Dom's pipeline
 
 The inputs to these scripts are defined the exact same as they are in the main branch, except for the -r roiset input, which in this pipeline is the directory created by extract_and_name_rois.py, containing the mask csvs and pixel naming dictionary. In the examples below, the input -r is simply defined as the exact same as the output -o for extract_and_name_rois above. 
 
-## extract_roiset_metrics_to_csv_automation.py
+```bash
+extract_roiset_metrics_to_csv_automation.py
 python extract_roiset_metrics_to_csv_automation.py 
     -i /Users/akshitapanigrahi/Documents/data/193/raws_aligned_images 
     -r /Users/akshitapanigrahi/Documents/data/193/analysis 
     -o /Users/akshitapanigrahi/Desktop/roiset_metrics_automated.csv
+```
 
-## extract_roi_pixel_data_automation.py
+```bash
+extract_roi_pixel_data_automation.py
 python extract_roi_pixel_data_automation.py 
     -i /Users/akshitapanigrahi/Documents/data/193/raws_aligned_images 
     -r /Users/akshitapanigrahi/Documents/data/193/analysis 
     -o /Users/akshitapanigrahi/Desktop/spot_pixel_data_automated.csv
+```
 
-## color_transform_automation.py
+```bash
+color_transform_automation.py
 python color_transform_automation.py 
     -p /Users/akshitapanigrahi/Desktop/spot_pixel_data_automated.csv 
     -r /Users/akshitapanigrahi/Documents/data/193/analysis 
     -i /Users/akshitapanigrahi/Documents/data/193/raws_aligned_images 
     -o /Users/akshitapanigrahi/Desktop
-
+```
 Disclaimer: Basecalling output is as expected not great, as the ROIs are extracted for the entire spot, and the background defined as the entire area that is not a spot. These scripts were just added to see the entire downstream pipeline with the automated ROI extraction. 
