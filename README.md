@@ -86,7 +86,7 @@ python extract_and_name_rois.py
 ```
 # Remaining pipeline
 
-Below are command line instructions to run the remaining tools in Dom's pipeline, using the outputs from extract_and_name_rois.py. All of these downstream tools were modified from the most recent version. 
+Below are command line instructions to run the remaining tools in Dom's pipeline, using the outputs from extract_and_name_rois.py. All of these downstream tools were modified from the most recent version as of July 4, 2023. 
 
 The inputs to these scripts are defined the exact same as they are in the main branch, except for the -r roiset input, which in this pipeline is the directory created by extract_and_name_rois.py, containing the mask csvs and pixel naming dictionary. In the examples below, the input -r is simply defined as the exact same as the output -o for extract_and_name_rois above. 
 
