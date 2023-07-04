@@ -542,12 +542,6 @@ def remove_nested(pixel_mask_dict, image):
 
     return keep_mask, new_pixel_mask_dict
 
-
-inputpath = '/Users/akshitapanigrahi/Documents/data/193/raws_aligned_images'
-outputfilename = '/Users/akshitapanigrahi/Documents/data/193/analysis'
-
-main(inputpath, outputfilename)
-
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(
