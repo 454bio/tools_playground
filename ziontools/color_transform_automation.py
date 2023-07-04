@@ -394,7 +394,7 @@ def calculate_and_apply_transformation(
     df_out = pd.DataFrame(rows_list)
     df_out.sort_values(by=['spot_index', 'spot_name', 'cycle'], inplace=True)
 #           print(f"Writing {outputfilename}")
-    df_out.to_csv(os.path.join(output_directory_path, "color_transformed_spots.csv"), index=False)
+    df_out.to_csv(os.path.join(output_directory_path, "color_transformed_spots_automated.csv"), index=False)
     print(df_out.to_string(index=False))
 
     return df_out
