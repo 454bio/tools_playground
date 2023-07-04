@@ -63,8 +63,9 @@ def main(inputpath: str, outputfilename: str):
     valid_masks = []
     for mask in new_masks:
         array = [mask['bbox'][2], mask['bbox'][3]]
-        X = array[1]
-        Y = array[0]
+
+        X = max(array)
+        Y = array[array.index(X) - 1]  # Get the other value in the array
     
         if X/Y < 1.5:
             valid_masks.append(mask)
@@ -73,22 +74,29 @@ def main(inputpath: str, outputfilename: str):
     
     sam_mask, pixel_mask_dict, pixel_bbox_dict = get_mask_arr_dict_and_sam_mask(new_masks)   
     
+    plt.figure(figsize=(10,10))
+    plt.imshow(image)
+    show_anns(new_masks)
+    plt.axis('off')
+    plt.show()
+    
     removeNest = input("Do you want to remove any nested ROIs? (Y/N)")
     nest = False
     if removeNest == 'Y':
         nest = True
     
     if (nest):
-        keep_mask = remove_nested(pixel_mask_dict, image)
-        sam_mask = keep_mask[0]
-        pixels_to_remove = keep_mask[1]
-        pixel_mask_dict = {key: value for key, value in pixel_mask_dict.items() if key not in pixels_to_remove}
+        
+        keep_mask, new_pixel_mask_dict = remove_nested(pixel_mask_dict, image)
+        sam_mask = keep_mask
+        pixel_mask_dict = new_pixel_mask_dict
+        
+        plt.figure(figsize=(10,10))
+        plt.imshow(sam_mask)
+        plt.axis('off')
+        plt.show()
     
-    plt.figure(figsize=(10,10))
-    plt.imshow(sam_mask)
-    plt.axis('off')
-    plt.show()
-    
+   
     natural = input("Do you want to assign a natural numerical ordering to the ROIs? (Y/N)")
     wantNatural = False
     if (natural == 'Y'):
@@ -347,7 +355,7 @@ def process_masks(masks):
     
     for mask in valid_masks:
         y = mask['bbox'][1]
-        if (y > 50):
+        if (y > 50 ):
             valid2_masks.append(mask)
             
     return valid2_masks   
@@ -423,7 +431,7 @@ def check_if_two_overlap_row(p_1, p_2, pixel_mask_dict):
     return False
 
 def store_arrays_as_csv(pixel_mask_dict, pixel_discovery_order_dict, folder_path):
-    array_folder = folder_path + '/rois'
+    array_folder = str(folder_path) + '/rois'
     # Create the folder if it doesn't exist
     os.makedirs(array_folder, exist_ok=True)
 
@@ -510,14 +518,35 @@ def remove_nested(pixel_mask_dict, image):
         else:
             keep_pixels.append(pixel)
 
-    keep_mask_to_sum = []
+    keep_pixels.sort() #sorts keep pixels from least to greatest
 
-    for keep in keep_pixels:
-        keep_mask_to_sum.append(pixel_mask_dict.get(keep))
+    new_pixel_mask_dict = {} #maps the New pixels, like straight up new, to their mask array which we also transform
+    
+    old_to_new = {} #maps the old pixel value to its translated new one
+
+    for i, pixel in enumerate(keep_pixels):
+        old_to_new[pixel] = i + 1
+        
+    for old_pixel in old_to_new.keys(): #basically iterating through the old pixels aka the og keep_pixels
+        old_arr = pixel_mask_dict.get(old_pixel) #original mask corresponding to the old pixel
+        new_arr = np.where(old_arr == old_pixel, old_to_new.get(old_pixel), old_arr)
+        new_pixel_mask_dict[old_to_new.get(old_pixel)] = new_arr
+            
+    keep_mask_to_sum = []
+    new_pixels = new_pixel_mask_dict.keys()
+    
+    for new in new_pixels:
+        keep_mask_to_sum.append(new_pixel_mask_dict.get(new))
 
     keep_mask = np.sum(keep_mask_to_sum, axis=0)
 
-    return keep_mask, pixels_to_remove
+    return keep_mask, new_pixel_mask_dict
+
+
+inputpath = '/Users/akshitapanigrahi/Documents/data/193/raws_aligned_images'
+outputfilename = '/Users/akshitapanigrahi/Documents/data/193/analysis'
+
+main(inputpath, outputfilename)
 
 if __name__ == '__main__':
 
