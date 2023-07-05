@@ -89,6 +89,9 @@ python extract_and_name_rois.py
 
 ![image](https://github.com/454bio/tools_playground/assets/129779339/e224e715-ab92-4939-b2ba-c2a90833fa71)
 
+![image](https://github.com/454bio/tools_playground/assets/129779339/9571d01e-6ce0-4069-a312-e801eb6b4b7d)
+
+
 # Remaining pipeline
 
 Below are command line instructions to run the remaining tools in Dom's pipeline, using the outputs from extract_and_name_rois.py. All of these downstream tools were modified from the most recent version as of July 4, 2023. 
