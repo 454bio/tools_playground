@@ -85,7 +85,7 @@ python extract_and_name_rois.py
     -o /Users/akshitapanigrahi/data/193/analysis
 ```
 
-Sample Automated ROI Extraction and Naming Output
+### Sample Automated ROI Extraction and Naming Output
 
 ![image](https://github.com/454bio/tools_playground/assets/129779339/e224e715-ab92-4939-b2ba-c2a90833fa71)
 
