@@ -60,9 +60,6 @@ Any combination of these parameters can be sent/not sent.
 
 The program outputs a dataframe of the post color transform base calls, post dephased base calls for each spot, and the cumulative predicted error. It also compares the color transform/dephased basecalls with the ground truth basecall. 
 
-![image](https://github.com/454bio/tools_playground/assets/129779339/99af5caa-12fd-4b10-83a4-781cdd8c5e7d)
-
-
 **All comparisons with ground truth are done POST running of dephasing model**
 
 The table is stored to a CSV, 'dephased_basecalls.csv'
