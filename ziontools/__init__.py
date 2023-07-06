@@ -6,3 +6,4 @@ from .color_transformation import calculate_and_apply_transformation, plot_bars
 from .triangle_graph import plot_triangle
 from .plot_spot_trajectories import plot_spot_trajectories
 from .plot_roiset_run_comparison import plot_roiset_run_comparison
+from .dephaser import dephase
