@@ -155,6 +155,8 @@ def dephase(color_transformed_filename: str, output_csv: str):
 #        print('cumulative error: %f' % results['err'])
 
         expected_basecalls = oligo_sequences.get(spot_name)[:numCycles] if spot_name in oligo_sequences.keys() else ""
+        maxint_edit_distance = edit_distance(max_call, expected_basecalls)
+        dephased_edit_distance = edit_distance(results['basecalls'], expected_basecalls)
         dict_entry = {
             'spot_index': spot_index,
             'spot_name': spot_name,
@@ -162,8 +164,10 @@ def dephase(color_transformed_filename: str, output_csv: str):
             'expected_basecalls': expected_basecalls,
             'max_int_basecalls': max_call,
             'dephased_basecalls': results['basecalls'],
-            'maxint_edit_distance': edit_distance(max_call, expected_basecalls),
-            'dephased_edit_distance': edit_distance(results['basecalls'], expected_basecalls),
+            'maxint_edit_distance': maxint_edit_distance,
+            'dephased_edit_distance': dephased_edit_distance,
+            'maxint_correct': numCycles-maxint_edit_distance,
+            'dephased_correct': numCycles-dephased_edit_distance,
             'ie': ie,
             'cf': cf,
             'dr': dr,
