@@ -154,13 +154,19 @@ def dephase(color_transformed_filename: str, output_csv: str):
 #        print(results['basecalls'])
 #        print('cumulative error: %f' % results['err'])
 
+        expected_basecalls = oligo_sequences.get(spot_name)[:numCycles] if spot_name in oligo_sequences.keys() else ""
         dict_entry = {
             'spot_index': spot_index,
             'spot_name': spot_name,
             'cycles': numCycles,
-            'expected_basecalls': oligo_sequences.get(spot_name)[:numCycles] if spot_name in oligo_sequences.keys() else None,
+            'expected_basecalls': expected_basecalls,
             'max_int_basecalls': max_call,
             'dephased_basecalls': results['basecalls'],
+            'maxint_edit_distance': edit_distance(max_call, expected_basecalls),
+            'dephased_edit_distance': edit_distance(results['basecalls'], expected_basecalls),
+            'ie': ie,
+            'cf': cf,
+            'dr': dr,
         }
         results_list.append(dict_entry)
 
@@ -172,3 +178,20 @@ def dephase(color_transformed_filename: str, output_csv: str):
     df.to_csv(output_csv, index=False)
 
     return df
+
+# TODO, test
+def edit_distance(str1, str2):
+    m, n = len(str1), len(str2)
+    dp = [[0] * (n + 1) for _ in range(m + 1)]
+    for i in range(m + 1):
+        for j in range(n + 1):
+            if i == 0:
+                dp[i][j] = j
+            elif j == 0:
+                dp[i][j] = i
+            elif str1[i - 1] == str2[j - 1]:
+                dp[i][j] = dp[i - 1][j - 1]
+            else:
+                dp[i][j] = 1 + min(dp[i - 1][j], dp[i][j - 1], dp[i - 1][j - 1])
+
+    return dp[m][n]
