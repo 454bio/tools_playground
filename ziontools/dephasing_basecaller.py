@@ -10,13 +10,25 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from common import oligo_sequences, get_cycle_files, default_base_color_map, default_spot_colors
 import os
-
 import math
 
+#spot_data is csv of color_transformed_spots
+def normalize_dye_intensities(spot_data_df):
+    df_rows = spot_data_df.values.tolist()
+    df_normalized = spot_data_df.copy()
+    for i in range(len(df_rows)):
+        curr_sum = df_normalized.loc[i, 'G'] + df_normalized.loc[i, 'C'] + df_normalized.loc[i, 'A'] + df_normalized.loc[i, 'T']
+        df_normalized.loc[i, 'G'] = df_normalized.loc[i, 'G'] / curr_sum
+        df_normalized.loc[i, 'C'] = df_normalized.loc[i, 'C'] / curr_sum
+        df_normalized.loc[i, 'A'] = df_normalized.loc[i, 'A'] / curr_sum
+        df_normalized.loc[i, 'T'] = df_normalized.loc[i, 'T'] / curr_sum
+        
+    return df_normalized
+
 verbose = 0
-wantPlots = True
-gridsearch = True
-correctLoss = False
+wantPlots = False
+gridsearch = False
+correctLoss = True
 compare = False
 
 bases = ['G', 'C', 'A', 'T']
@@ -29,6 +41,57 @@ dr = 0.02
 spot_data = '/Users/akshitapanigrahi/Desktop/color_transformed_spots_S0239_ROI_5th_Column.csv'
 output_directory_path = '/Users/akshitapanigrahi/Desktop'
 state_model = 'default' # [default,dark]
+
+df = pd.read_csv(spot_data, sep=',')
+
+dye_bases = ["G", "C", "A", "T"]
+
+def purities_chastities(df):
+    df_normalized = normalize_dye_intensities(df)
+    
+    spot_indizes = df_normalized.spot_index.unique()
+    
+    purities = []
+
+    for i, spot_index in enumerate(spot_indizes):
+        df_spot = df_normalized.loc[(df['spot_index'] == spot_index)]
+        spot_name = df_spot.spot_name.unique()[0]
+
+        purity = df_spot[dye_bases].max(axis=1)
+        purity_rounded = round(purity, 2)
+        
+        purities.append(purity)
+        
+    new_purities = np.reshape(purities, (np.shape(purities)[0] * np.shape(purities)[1]))
+    df['purity'] = new_purities
+    
+    
+    spot_indizes = df.spot_index.unique()
+
+    chastities = []
+
+    for i, spot_index in enumerate(spot_indizes):
+
+        df_spot = df.loc[(df['spot_index'] == spot_index)]
+        spot_name = df_spot.spot_name.unique()[0]
+        
+        highest = df_spot[dye_bases].max(axis=1)
+        
+        sorted_values = df_spot[dye_bases].apply(lambda x: x.nlargest(3).values, axis=1)
+        second_highest = sorted_values.apply(lambda x: x[1])
+        third_highest = sorted_values.apply(lambda x: x[2])
+
+        chastity = highest / (second_highest + third_highest)      
+        chastity_rounded = round(chastity, 2)
+        chastities.append(chastity)
+
+    new_chastities = np.reshape(chastities, (np.shape(chastities)[0] * np.shape(chastities)[1]))
+    df['chastity'] = new_chastities
+
+    return df
+
+df = purities_chastities(df)
+print(df)
 
 argc = len(sys.argv)
 argcc = 1
@@ -120,7 +183,7 @@ def CallBases(ie, cf, dr, numCycles, measuredSignal):
         if verbose > 0:
             print('iteration %d basecalls: %s' % (iteration, dnaTemplate))
 
-    print('basecalls: %s' % dnaTemplate)
+    #print('basecalls: %s' % dnaTemplate)
     cumulativeError = np.sum(errorPerCycle)
     return {'err':cumulativeError, 'basecalls':dnaTemplate, 'intensites':dyeIntensities, 'signal':totalSignal, 'error':errorPerCycle}
 
@@ -166,7 +229,6 @@ def GridSearch(data, spot_name):
     return bestie, bestcf, bestdr
 
 #Break up color transformed spot data into arrays of spot dye counts
-df = pd.read_csv(spot_data, sep=',')
 unique_spots = df.drop_duplicates(subset='spot_index')[['spot_index', 'spot_name']]
 spot_indices = unique_spots['spot_index'].tolist()
 spot_names = unique_spots['spot_name'].tolist()
@@ -195,7 +257,7 @@ spot_arrays = spot_arrays[:len(spot_names)]
 # Perform base call for each spot
 
 # Create an empty data frame
-df = pd.DataFrame(columns=['spot_index', 'spot_name', 'cycle', 'G', 'C', 'A', 'T'])
+df_pred = pd.DataFrame(columns=['spot_index', 'spot_name', 'cycle', 'G', 'C', 'A', 'T'])
 
 best_ies = []
 best_cfs = []
@@ -322,7 +384,7 @@ for i, spot_data in enumerate(spot_arrays):
     })
        
     # Append the cycle data to the main data frame
-    df = pd.concat([df, cycle_df], ignore_index=True)
+    df_pred = pd.concat([df_pred, cycle_df], ignore_index=True)
     
         # plots
     if wantPlots:
@@ -369,13 +431,13 @@ if (gridsearch):
     plt.show()
 
 # Reorder the rows based on spot_names list
-df['spot_index'] = pd.Categorical(df['spot_index'], categories=spot_indices, ordered=True)
-df['cycle'] = df['cycle'].astype(int)  # Convert cycle column to integer for proper sorting
-df = df.sort_values(['spot_index', 'cycle']).reset_index(drop=True)
+df_pred['spot_index'] = pd.Categorical(df_pred['spot_index'], categories=spot_indices, ordered=True)
+df_pred['cycle'] = df_pred['cycle'].astype(int)  # Convert cycle column to integer for proper sorting
+df_pred = df_pred.sort_values(['spot_index', 'cycle']).reset_index(drop=True)
 
 # Save the reordered data frame to a CSV file
 output_file_path = Path(output_directory_path) / "dephased_intensities.csv"
-df.to_csv(output_file_path, index=False)
+df_pred.to_csv(output_file_path, index=False)
 
 cols = 4
 fig = make_subplots(
@@ -387,7 +449,7 @@ for i, spot_index in enumerate(spot_indices):
     r = (i // cols) + 1
     c = (i % cols) + 1
 
-    df_spot = df.loc[df['spot_index'] == spot_index]
+    df_spot = df_pred.loc[df_pred['spot_index'] == spot_index]
 
     # Add traces
     for base_spot_name in dye_bases:
@@ -425,7 +487,44 @@ result_df = pd.concat(spot_dataframes, ignore_index=True)
 output_file_path = Path(output_directory_path) / "dephased_basecalls.csv"
 result_df.to_csv(output_file_path, index=False)
 
-print(result_df.to_string(index=False))
+def quality_metrics(result_df):   
+    numCycles = result_df['NumCycles'][0]
+    numSpots = len(result_df)
+
+    quality_df = pd.DataFrame(columns=['cycle', 'Q__color_transform', 'Q_dephased'])
+    
+    for cycle in range(numCycles):        
+        p_color_transform = 0
+        p_dephased = 0
+        
+        Q_color_transform = 0
+        Q_dephased = 0
+        
+        for index, spot_row in result_df.iterrows():
+            curr_color_transform_basecall = spot_row['Basecalls Post Color Transformation'][:(cycle + 1)]
+            curr_dephased_basecall = spot_row['Basecalls Post Dephasing'][:(cycle + 1)]
+            curr_truth_basecall = spot_row['Ground Truth Basecalls'][:(cycle + 1)]
+            
+            p_color_transform += sum(char1 != char2 for char1, char2 in zip(curr_color_transform_basecall, curr_truth_basecall))
+            p_dephased += sum(char1 != char2 for char1, char2 in zip(curr_dephased_basecall, curr_truth_basecall))
+                
+        
+        p_color_transform = p_color_transform / ((cycle + 1) * numSpots)
+        p_dephased = p_dephased / ((cycle + 1) * numSpots)
+        
+        Q_color_transform = -10 * math.log10(p_color_transform)
+        Q_dephased = -10 * math.log10(p_dephased)
+        
+        quality_df.at[cycle, 'cycle'] = cycle + 1
+        quality_df.at[cycle, 'Q__color_transform'] = Q_color_transform
+        quality_df.at[cycle, 'Q_dephased'] = Q_dephased
+        
+        
+        # Save the reordered data frame to a CSV file
+    output_file_path = Path(output_directory_path) / "cycle_Qscores.csv"
+    quality_df.to_csv(output_file_path, index=False)
+
+    return quality_df
 
 if (compare):
     numeric_color_transform_errors = pd.to_numeric(result_df['#Differences: Ground Truth vs Color Transform'], errors='coerce')
@@ -444,3 +543,45 @@ if (compare):
 
     print("Total #Errors, Color Transform Basecalls: ", color_transform_error_sum)
     print("Total #Errors, Dephased Basecalls: ", dephased_error_sum)
+    
+    print(result_df.to_string(index=False))
+    
+    quality_df = quality_metrics(result_df)
+    print(quality_df.to_string(index=False))
+    
+    plt.figure()
+    plt.plot(quality_df['cycle'], quality_df['Q__color_transform'], label='Color Transformed')
+    plt.plot(quality_df['cycle'], quality_df['Q_dephased'], label='Dephased')
+    plt.xlabel('cycle')
+    plt.ylabel('Q score')
+    plt.legend()
+    plt.show()
+    
+    plt.figure()
+    color_transform_read_lengths = result_df['Read Length: Color Transformation'][pd.to_numeric(result_df['Read Length: Color Transformation'], errors='coerce').notnull()].astype(int).values
+    plt.hist(color_transform_read_lengths)
+    plt.title('Color Transformation - Distribution of Read Lengths')
+    plt.xlabel('Read Length')
+    plt.show()
+    
+    plt.figure()
+    dephased_read_lengths = result_df['Read Length: Post Dephasing'][pd.to_numeric(result_df['Read Length: Post Dephasing'], errors='coerce').notnull()].astype(int).values
+    plt.hist(dephased_read_lengths)
+    plt.title('Dephased - Distribution of Read Lengths')
+    plt.xlabel('Read Length')
+    plt.show()
+    
+    color_transform_avg_read_length = np.average(color_transform_read_lengths)
+    dephased_avg_read_length = np.average(dephased_read_lengths)
+
+    color_transform_max_read_length = np.max(color_transform_read_lengths)
+    dephased_max_read_length = np.max(dephased_read_lengths)
+    
+    read_length_data = {
+        'Average Read Length': [color_transform_avg_read_length, dephased_avg_read_length],
+        'Max Read Length': [color_transform_max_read_length, dephased_max_read_length]
+    }
+
+    read_length_summary = pd.DataFrame(read_length_data, index=['Color Transformed', 'Dephased'])
+    
+    print(read_length_summary.to_string(index=False))
