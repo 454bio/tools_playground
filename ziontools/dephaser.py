@@ -141,33 +141,52 @@ def dephase(color_transformed_filename: str, output_csv: str):
         print(f"spot: {i}, idx: {spot_index}, name: {spot_name}")
         text = df_spot[bases].idxmax(axis=1)
 #        print(text)
-        max_call = text.str.cat(sep='')
+        max_intensity_read = text.str.cat(sep='')
 #        print(df_spot)
-#        print(f'max_call: {max_call}')
+#        print(f'max_intensity_read: {max_intensity_read}')
 
         A = df_spot[bases].to_numpy()
         A = np.round(A, 2)
         numCycles = len(A)
         ie, cf, dr = grid_search(numCycles, A)
         results = CallBases(ie, cf, dr, numCycles, A)
+        phase_corrected_read = results['basecalls']
 #        print(results)
 #        print(results['basecalls'])
 #        print('cumulative error: %f' % results['err'])
 
-        expected_basecalls = oligo_sequences.get(spot_name)[:numCycles] if spot_name in oligo_sequences.keys() else ""
-        maxint_edit_distance = edit_distance(max_call, expected_basecalls)
-        dephased_edit_distance = edit_distance(results['basecalls'], expected_basecalls)
+        expected_read = oligo_sequences.get(spot_name)[:numCycles] if spot_name in oligo_sequences.keys() else ""
+        edit_distance_max_intensity = edit_distance(max_intensity_read, expected_read)
+        edit_distance_phase_corrected = edit_distance(phase_corrected_read, expected_read)
+
+
+        # Calculate read length for post color transformation
+        read_length_0_errors_max_intensity = numCycles
+        for j, (char1, char2) in enumerate(zip(max_intensity_read, expected_read)):
+            if char1 != char2:
+                read_length_0_errors_max_intensity = j
+                break
+
+        # Calculate read length for post phase correction
+        read_length_0_errors_phase_corrected = numCycles
+        for j, (char1, char2) in enumerate(zip(phase_corrected_read, expected_read)):
+            if char1 != char2:
+                read_length_0_errors_phase_corrected = j
+                break
+
         dict_entry = {
             'spot_index': spot_index,
             'spot_name': spot_name,
             'cycles': numCycles,
-            'expected_basecalls': expected_basecalls,
-            'max_int_basecalls': max_call,
-            'dephased_basecalls': results['basecalls'],
-            'maxint_edit_distance': maxint_edit_distance,
-            'dephased_edit_distance': dephased_edit_distance,
-            'maxint_correct': numCycles-maxint_edit_distance,
-            'dephased_correct': numCycles-dephased_edit_distance,
+            'expected_read': expected_read,
+            'max_intensity_read': max_intensity_read,
+            'phase_corrected_read': phase_corrected_read,
+            'length_perfect_max_intensity': read_length_0_errors_max_intensity,
+            'length_perfect_phase_corrected': read_length_0_errors_phase_corrected,
+            'length_aligned_max_intensity': numCycles - edit_distance_max_intensity,
+            'length_aligned_phase_corrected': numCycles - edit_distance_phase_corrected,
+            'edit_distance_max_intensity': edit_distance_max_intensity,
+            'edit_distance_phase_corrected': edit_distance_phase_corrected,
             'ie': ie,
             'cf': cf,
             'dr': dr,
