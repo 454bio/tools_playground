@@ -25,11 +25,213 @@ def normalize_dye_intensities(spot_data_df):
         
     return df_normalized
 
+def purities_chastities(df: pd.DataFrame):    
+    # First do purities
+    df_normalized = normalize_dye_intensities(df)
+
+    spot_indizes = df_normalized.spot_index.unique()
+
+    cols = 4
+    fig_purities = make_subplots(
+        rows=math.ceil(len(spot_indizes) / cols), cols=cols
+    )
+
+    purities = []
+
+    for i, spot_index in enumerate(spot_indizes):
+
+        r = (i // cols) + 1
+        c = (i % cols) + 1
+
+        df_spot = df_normalized.loc[(df_normalized['spot_index'] == spot_index)]
+        spot_name = df_spot.spot_name.unique()[0]
+
+        # Add traces
+        for base_spot_name in dye_bases:
+            fig_purities.add_trace(
+                go.Bar(
+                    x=df_spot['cycle'],
+                    y=df_spot[base_spot_name],
+                    name=base_spot_name,
+                    marker_color=default_base_color_map[base_spot_name],
+                    legendgroup=base_spot_name,
+                    showlegend=(i == 0)
+                ),
+                row=r, col=c
+            )
+
+        fig_purities.add_trace(
+            go.Scatter(
+                x=df_spot['cycle'],
+                y=df_spot['G'] / 1000000 + 1,
+                text=df_spot[dye_bases].idxmax(axis=1),
+                marker_color="black",
+                mode="text",
+                textposition="top center",
+                textfont_size=26,
+                showlegend=False
+            ),
+            row=r, col=c
+        )
+
+        purity = df_spot[dye_bases].max(axis=1)
+        purity_rounded = round(purity, 2)
+
+        purities.append(purity)
+        
+        fig_purities.add_trace(
+            go.Scatter(
+                x=df_spot['cycle'],
+                y=purity,
+                mode="lines",
+                name="Purity",
+                line=dict(color="blue"),
+                showlegend=False
+            ),
+            row=r, col=c
+        )
+
+        fig_purities.add_trace(
+            go.Scatter(
+                x=df_spot['cycle'],
+                y=df_spot['G'] / 1000000 + 1,
+                text=purity_rounded,
+                marker_color="black",
+                mode="text",
+                textposition="middle center",
+                textfont_size=13,
+                showlegend=False
+            ),
+            row=r, col=c
+        )
+
+        max_value = df_spot[dye_bases].max().max()
+        min_value = df_spot[dye_bases].min().min()
+
+        upper_lim = 1.2
+        lower_lim = -0.2
+
+        if max_value > upper_lim:
+            upper_lim = max_value + 0.1
+
+        if min_value < lower_lim:
+            lower_lim = min_value - 0.1
+
+        max_value = str(max_value)[0:5]
+
+        fig_purities.update_yaxes(range=[lower_lim, upper_lim], row=r, col=c)
+
+    fig_purities.update_layout(
+        height=3000,
+        width=3000,
+        legend=dict(title_font_family="Times New Roman", font=dict(size=40))
+    )
+
+    new_purities = np.reshape(purities, (np.shape(purities)[0] * np.shape(purities)[1]))
+    df['purity'] = new_purities
+
+    fig_chastities = make_subplots(
+        rows=math.ceil(len(spot_indizes) / cols), cols=cols
+    )
+
+    chastities = []
+
+    for i, spot_index in enumerate(spot_indizes):
+
+        r = (i // cols) + 1
+        c = (i % cols) + 1
+
+        df_spot = df.loc[(df['spot_index'] == spot_index)]
+        spot_name = df_spot.spot_name.unique()[0]
+
+        # Add traces
+        for base_spot_name in dye_bases:
+            fig_chastities.add_trace(
+                go.Bar(
+                    x=df_spot['cycle'],
+                    y=df_spot[base_spot_name],
+                    name=base_spot_name,
+                    marker_color=default_base_color_map[base_spot_name],
+                    legendgroup=base_spot_name,
+                    showlegend=(i == 0)
+                ),
+                row=r, col=c
+            )
+
+        fig_chastities.add_trace(
+            go.Scatter(
+                x=df_spot['cycle'],
+                y=df_spot['G'] / 1000000 + 1,
+                text=df_spot[dye_bases].idxmax(axis=1),
+                marker_color="black",
+                mode="text",
+                textposition="top center",
+                textfont_size=26,
+                showlegend=False
+            ),
+            row=r, col=c
+        )
+
+        highest = df_spot[dye_bases].max(axis=1)
+
+        sorted_values = df_spot[dye_bases].apply(lambda x: x.nlargest(3).values, axis=1)
+        second_highest = sorted_values.apply(lambda x: x[1])
+        third_highest = sorted_values.apply(lambda x: x[2])
+
+        chastity = highest / (second_highest + third_highest)
+        chastity_rounded = round(chastity, 2)
+        chastities.append(chastity)
+
+        fig_chastities.add_trace(
+            go.Scatter(
+                x=df_spot['cycle'],
+                y=chastity/10,
+                mode="lines",
+                name="Chastity",
+                line=dict(color="blue"),
+                showlegend=False
+            ),
+            row=r, col=c
+        )
+
+        fig_chastities.update_xaxes(
+            title_text=str(spot_index) + '  ' + spot_name + "  (" + oligo_sequences.get(spot_name, "")[:16] + ")",
+            title_font={"size": 24},
+            row=r, col=c
+        )
+
+        max_value = df_spot[dye_bases].max().max()
+        min_value = df_spot[dye_bases].min().min()
+
+        upper_lim = 1.2
+        lower_lim = -0.2
+
+        if max_value > upper_lim:
+            upper_lim = max_value + 0.1
+
+        if min_value < lower_lim:
+            lower_lim = min_value - 0.1
+
+        max_value = str(max_value)[0:5]
+
+        fig_chastities.update_yaxes(range=[lower_lim, upper_lim], row=r, col=c)
+
+    fig_chastities.update_layout(
+        height=3000,
+        width=3000,
+        legend=dict(title_font_family="Times New Roman", font=dict(size=40))
+    )
+
+    new_chastities = np.reshape(chastities, (np.shape(chastities)[0] * np.shape(chastities)[1]))
+    df['chastity'] = new_chastities
+
+    return fig_purities, fig_chastities, df
+
 verbose = 0
 wantPlots = False
-gridsearch = False
-correctLoss = True
-compare = False
+gridsearch = True
+correctLoss = False
+compare = True
 
 bases = ['G', 'C', 'A', 'T']
 base_colors = ['green', 'yellow', 'blue', 'red']
@@ -38,60 +240,18 @@ ie = 0.09
 cf = 0.065
 dr = 0.02
 
-spot_data = '/Users/akshitapanigrahi/Desktop/color_transformed_spots_S0239_ROI_5th_Column.csv'
+spot_data = '/Users/akshitapanigrahi/Desktop/245_color_transformed_spots.csv'
 output_directory_path = '/Users/akshitapanigrahi/Desktop'
-state_model = 'default' # [default,dark]
+state_model = 'default' 
 
 df = pd.read_csv(spot_data, sep=',')
 
 dye_bases = ["G", "C", "A", "T"]
 
-def purities_chastities(df):
-    df_normalized = normalize_dye_intensities(df)
-    
-    spot_indizes = df_normalized.spot_index.unique()
-    
-    purities = []
+raw_fig_purities, raw_fig_chastities, raw_df_predicted_purities_chastities = purities_chastities(df)
 
-    for i, spot_index in enumerate(spot_indizes):
-        df_spot = df_normalized.loc[(df['spot_index'] == spot_index)]
-        spot_name = df_spot.spot_name.unique()[0]
-
-        purity = df_spot[dye_bases].max(axis=1)
-        purity_rounded = round(purity, 2)
-        
-        purities.append(purity)
-        
-    new_purities = np.reshape(purities, (np.shape(purities)[0] * np.shape(purities)[1]))
-    df['purity'] = new_purities
-    
-    
-    spot_indizes = df.spot_index.unique()
-
-    chastities = []
-
-    for i, spot_index in enumerate(spot_indizes):
-
-        df_spot = df.loc[(df['spot_index'] == spot_index)]
-        spot_name = df_spot.spot_name.unique()[0]
-        
-        highest = df_spot[dye_bases].max(axis=1)
-        
-        sorted_values = df_spot[dye_bases].apply(lambda x: x.nlargest(3).values, axis=1)
-        second_highest = sorted_values.apply(lambda x: x[1])
-        third_highest = sorted_values.apply(lambda x: x[2])
-
-        chastity = highest / (second_highest + third_highest)      
-        chastity_rounded = round(chastity, 2)
-        chastities.append(chastity)
-
-    new_chastities = np.reshape(chastities, (np.shape(chastities)[0] * np.shape(chastities)[1]))
-    df['chastity'] = new_chastities
-
-    return df
-
-df = purities_chastities(df)
-print(df)
+output_file_path = Path(output_directory_path) / "color_transformed_purities_chastities.csv"
+raw_df_predicted_purities_chastities.to_csv(output_file_path, index=False)
 
 argc = len(sys.argv)
 argcc = 1
@@ -482,8 +642,6 @@ fig.show()
 
 # Concatenate all spot DataFrames into a single DataFrame
 result_df = pd.concat(spot_dataframes, ignore_index=True)
-
-# Save the reordered data frame to a CSV file
 output_file_path = Path(output_directory_path) / "dephased_basecalls.csv"
 result_df.to_csv(output_file_path, index=False)
 
@@ -584,4 +742,12 @@ if (compare):
 
     read_length_summary = pd.DataFrame(read_length_data, index=['Color Transformed', 'Dephased'])
     
-    print(read_length_summary.to_string(index=False))
+    print(read_length_summary.to_string())
+
+fig_purities, fig_chastities, df_predicted_purities_chastities = purities_chastities(df)
+
+fig_purities.show()
+fig_chastities.show()
+
+output_file_path = Path(output_directory_path) / "dephased_purities_chastities.csv"
+df_predicted_purities_chastities.to_csv(output_file_path, index=False)
