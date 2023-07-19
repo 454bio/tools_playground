@@ -155,7 +155,9 @@ def dephase(color_transformed_filename: str, output_csv: str):
 #        print(results['basecalls'])
 #        print('cumulative error: %f' % results['err'])
 
-        expected_read = oligo_sequences.get(spot_name)[:numCycles] if spot_name in oligo_sequences.keys() else ""
+        # handle jimage renamed spots, e.g. 372-1, 372-2
+        head_spot_name, sep, tail = spot_name.partition('-')
+        expected_read = oligo_sequences.get(head_spot_name)[:numCycles] if head_spot_name in oligo_sequences.keys() else ""
         edit_distance_max_intensity = edit_distance(max_intensity_read, expected_read)
         edit_distance_phase_corrected = edit_distance(phase_corrected_read, expected_read)
 
