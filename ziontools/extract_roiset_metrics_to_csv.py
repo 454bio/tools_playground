@@ -102,7 +102,7 @@ def extract_roiset_metrics(inputpath: str, roizipfilepath : str, outputfilename:
 
     # create final dataframe
     df = pd.DataFrame(rows_list)
-    df.sort_values(by=['spot','cycle', 'TS'], inplace=True)
+    df.sort_values(by=['spot_name', 'cycle', 'TS'], inplace=True)
     print(f"Writing {outputfilename}")
     df.to_csv(outputfilename, index=False, lineterminator='\n')
 #    print(df.to_csv(index=False))
