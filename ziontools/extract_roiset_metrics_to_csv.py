@@ -90,7 +90,9 @@ def extract_roiset_metrics(inputpath: str, roizipfilepath : str, outputfilename:
 
             dict_entry = {
                 'image_number': file_info_nb,
-                'spot': roi.name.lstrip('spot'), 'cycle': file_info_cy, 'WL': file_info_wl, 'TS': file_info_ts,
+                'spot_index': i+1,
+                'spot_name': roi.name,
+                'cycle': file_info_cy, 'WL': file_info_wl, 'TS': file_info_ts,
                 'Ravg': R_mean[i], 'Gavg': G_mean[i], 'Bavg': B_mean[i],
                 'Rmin': R_min[i], 'Gmin': G_min[i], 'Bmin': B_min[i],
                 'Rmax': R_max[i], 'Gmax': G_max[i], 'Bmax': B_max[i],
