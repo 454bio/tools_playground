@@ -1,92 +1,39 @@
-# tools_playground
+# 57k_image_roi_extraction_automation.py
 
-1. Extract basic metrics from ROIs
+This is a python script for segmentation of ROIs in a 57K mask. Each superspot is segmented, and the ROIs within each of those are extracted. 
 
-```
-extract_roiset_metrics_to_csv.py \
-    -i /mnt/nas_share/GoogleData/InstrumentData/MK27_02/20230504_1510_S0096_0001/raws/ \
-    -r /mnt/nas_share/GoogleData/InstrumentData/MK27_02/20230504_1510_S0096_0001/Analysis/S0096_RoiSet.zip \
-    -o S0096.csv
-```
-```
-extract_roiset_metrics_to_csv.py \
-    -i /mnt/nas_share/GoogleData/InstrumentData/MK27_02/20230504_1540_S0097_0001/raws/ \
-    -r /mnt/nas_share/GoogleData/InstrumentData/MK27_02/20230504_1540_S0097_0001/Analysis/S0097_RoiSet.zip \
-    -o S0097.csv
-```
-```
-extract_roiset_metrics_to_csv.py \
-    -i /mnt/nas_share/GoogleData/InstrumentData/MK27_02/20230504_1607_S0098_0001/raws/ \
-    -r /mnt/nas_share/GoogleData/InstrumentData/MK27_02/20230504_1607_S0098_0001/Analysis/S0098_RoiSet.zip \
-    -o S0098.csv
-```
-```
-extract_roiset_metrics_to_csv.py \
-    -i /mnt/nas_share/GoogleData/InstrumentData/MK27_02/20230504_1631_S0099_0001/raws/ \
-    -r /mnt/nas_share/GoogleData/InstrumentData/MK27_02/20230504_1631_S0099_0001/Analysis/S0099_RoiSet5.zip \
-    -o S0099.csv
+The ROIs are represented as a dictionary of segmentation masks, key representing superspot number, value representing a 2D array of similar format used in pipeline code (each ROI represented by a distinct pixel value, ROI pixel values increment by 1 from one ROI to another). 
+
+In theory, this dictionary can be fed to rest of pipeline, which would run downstream image analysis on each of the superspot mask arrays. Total time to run is < 1 minute.
+
+## Installation
+
+Before using the script, you need to have the required Python libraries installed. You can install them using the following command:
+
+```bash
+pip install opencv-python matplotlib numpy pandas
 ```
 
-```
-plot_roiset_run_comparison.py -h
+## Usage
 
-plot_roiset_run_comparison.py -i S0096.csv S0097.csv S0098.csv S0099.csv -o orig.jpg
+To run the script and analyze an image, follow these steps:
 
-plot_roiset_run_comparison.py -i S0096.csv S0097.csv S0098.csv S0099.csv -o normalized.jpg -n
-```
-Create browser based graph with spot trajectories
-```
-plot_spot_trajectories.py -i analysis/metrics.csv 
-plot_spot_trajectories.py -i analysis/metrics.csv -c G445 G525 R590 B445
-plot_spot_trajectories.py -i analysis/metrics.csv -s S1 S2 -c G445 G525 R590 B445
-plot_spot_trajectories.py -i analysis/metrics.csv -o analysis/trajectories.png
-```
+1. Open a command-line interface (terminal or command prompt).
 
-2. Create triangle graphs
-```
-extract_roiset_pixel_data.py -i . -r RoiSet.zip -o RoiSet.csv -e 7 -n 500
+2. Navigate to the directory where the script is located.
 
-triangle_graph.py -i RoiSet.csv -o triangle.png -g -m 20 33.3 12
+3. Execute the script by providing the path to the input image as a command-line argument. For example:
 
-triangle_graph.py -i RoiSet.csv -o triangle.png -g -c G445 G525 R590 B445
+   **On Windows:**
+   ```bash
+   python 57k_image_roi_extraction_automation.py path/to/your/image.jpg
+   ```
 
-triangle_graph.py -i RoiSet.csv -o triangle.png -g -s A C G T BG S1 S2
+   **On macOS/Linux:**
+   ```bash
+   python3 57k_image_roi_extraction_automation.py path/to/your/image.jpg
+   ```
 
-triangle_graph.py -i RoiSet.csv -o triangle.png -g -c G445 G525 R590 B445 -s A C G T BG S1 S2
+Replace `path/to/your/image.jpg` with the actual path to the 57K image you want to analyze. Reccomended use is on a cycle 1, 445 wavelength image.  
 
-```
-
-
-3. Create basic basecaller graph
-```
-extract_roiset_pixel_data.py -e 7 -n 500 \
-    -i /mnt/nas_share/GoogleData/InstrumentData/MK27_02/20230517_1458_S0115_0001/raws \
-    -r /mnt/nas_share/GoogleData/InstrumentData/MK27_02/20230517_1458_S0115_0001/analysis/RoiSetJRC4_28spotsACGT.zip \
-    -o /tmp/roi_pixel_data.csv
-    
-color_transformation.py \
-    -i /mnt/nas_share/GoogleData/InstrumentData/MK27_02/20230517_1458_S0115_0001/raws \
-    -r /mnt/nas_share/GoogleData/InstrumentData/MK27_02/20230517_1458_S0115_0001/analysis/RoiSetJRC4_28spotsACGT.zip \
-    -p /mnt/nas_share/GoogleData/InstrumentData/MK27_02/20230517_1458_S0115_0001/analysis/roi_pixel_data.csv \
-    -o /tmp
-
-
-
-cd /mnt/nas_share/GoogleData/InstrumentData/MK27_02/20230517_1458_S0115_0001
-
-extract_roiset_pixel_data.py \
-    -e 7 \
-    -n 500 \
-    -i raws \
-    -r analysis/RoiSetJRC4_28spotsACGT.zip \
-    -o /tmp/spot_pixel_data.csv
-
-color_transformation.py \
-    -i raws \
-    -r analysis/RoiSetJRC4_28spotsACGT.zip \
-    -p analysis/spot_pixel_data.csv \
-    -c G445 G525 R590 B445 \
-    -s A C G T BG S1 S2 \
-    -o /tmp
-
-```
+## Output
