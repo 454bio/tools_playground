@@ -36,4 +36,22 @@ To run the script and analyze an image, follow these steps:
 
 Replace `path/to/your/image.jpg` with the actual path to the 57K image you want to analyze. Reccomended use is on a cycle 1, 445 wavelength image.  
 
-## Output
+## Sample Input and Output
+
+The script will generate visualizations of the extracted ROIs for each of the super spots, as well as a visualization of all extracted ROIs. 
+
+The main function will also output a dictionary of the mask arrays for each of the super spots, as well as an overall mask array, for later downstream use in automated image to basecall pipeline. 
+
+Information on super spot pixel intensities and dimensions is also generated. 
+
+**Sample Input**
+
+Input Image: /Users/akshita/S0205_raws/00000022_001A_00022_445_C003_001811562.tif
+
+![Example Input Image](445_input_raw_image.jpg)
+
+## Methodology
+
+## Limitations, Future Directions, Notes
+
+
