@@ -46,9 +46,7 @@ Information on super spot pixel intensities and dimensions is also generated.
 
 **Sample Input**
 
-Input Image: /Users/akshita/S0205_raws/00000022_001A_00022_445_C003_001811562.tif
-
-![Example Input Image](445_input_raw_image.jpg)
+![Example Input Image](445_input_raw_image.tif)
 
 ## Methodology
 
