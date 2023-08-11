@@ -44,9 +44,26 @@ The main function will also output a dictionary of the mask arrays for each of t
 
 Information on super spot pixel intensities and dimensions is also generated. 
 
-**Sample Input**
+### Sample Input
 
-![Example Input Image](445_input_raw_image.tif)
+**Input Image: ex. 445_input_raw_image.tif**
+![originasdlfjads](https://github.com/454bio/tools_playground/assets/129779339/278403ae-03ce-43e5-8cea-6b10810023bc)
+
+**Output: Super Spots ROI Segmentation**
+![super spot](https://github.com/454bio/tools_playground/assets/129779339/6d10f59e-563e-4da9-90c6-26272b2b9fb7)
+
+**Output: ROI Segmentations Within Each Super Spot**
+![1](https://github.com/454bio/tools_playground/assets/129779339/2e668148-cc49-4176-abb3-e515291b333b)
+![5](https://github.com/454bio/tools_playground/assets/129779339/c4132cb3-91aa-40c2-a240-8063dc8b7a8f)
+![17](https://github.com/454bio/tools_playground/assets/129779339/ab454ad4-0bee-43e5-a833-b008649cfa22)
+
+...
+
+**Output: All Extracted ROIs Mask**
+![extracted rois](https://github.com/454bio/tools_playground/assets/129779339/46889682-4695-42e6-af68-6dd2328842c0)
+
+**Output: Mask arrays for all super spots, containing segmentations for ROIs**
+![image](https://github.com/454bio/tools_playground/assets/129779339/cb6652d2-15dd-4214-bbed-a6a70924b45f)
 
 ## Methodology
 
