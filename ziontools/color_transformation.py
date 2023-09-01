@@ -285,19 +285,21 @@ def calculate_and_apply_transformation(
         channels = [image_map[channel_name] for channel_name in channel_names]
 
         A = np.stack(channels, axis=2)
-        dim = A.shape
-        print(f"Matrix A shape: {dim}")
-        assert (n_features == dim[2])
+        (dim0, dim1, dim2) = A.shape
+        print(f"Matrix A shape: {A.shape}")
+        assert (dim2 == n_features)
 
         # apply transformation to each pixel, reshape temporarily
-        a = reg.predict(A.reshape(dim[0]*dim[1], n_features))
+        a = reg.predict(A.reshape(dim0*dim1, n_features))
         # reshape back
-        a = a.reshape(dim[0], dim[1], n_targets)
-        print(f"Matrix a shape: {a.shape}")
+        a = a.reshape(dim0, dim1, n_targets)
 
+        assert (a.shape[0] == dim0)
+        assert (a.shape[1] == dim1)
+        assert (a.shape[2] == n_targets)
         print("Transformation applied, shape", a.shape, type(a))
 
-        oligo_mask, nb_labels = get_roi_mask((1520, 2028), rois)
+        oligo_mask, nb_labels = get_roi_mask((dim0, dim1), rois)
 
 #        nb_labels = len(rois)
         label_ids = np.arange(1, nb_labels + 1)  # range(1, nb_labels + 1)
