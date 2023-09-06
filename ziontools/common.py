@@ -62,7 +62,7 @@ def get_cycle_files(inputpath: str) -> pd.DataFrame:
 
         filename = os.path.basename(filenamepath)
 
-        # extract file info
+        # filename format 1
         filenameRegex = re.compile(r'(\d+)_(\d+A)_(\d+)_(\d+)_(C\d+)_(\d+).tif')
         match = filenameRegex.search(filename)
         if match:
@@ -78,14 +78,71 @@ def get_cycle_files(inputpath: str) -> pd.DataFrame:
                 continue
 
             dict_entry = {
-                'file_info_nb': file_info_nb,'cycle': file_info_cy, 'wavelength': file_info_wl, 'timestamp': file_info_ts, 'filenamepath': filenamepath
+                'file_info_nb': file_info_nb,
+                'cycle': file_info_cy,
+                'wavelength': file_info_wl,
+                'timestamp': file_info_ts,
+                'filenamepath': filenamepath
             }
             files_list.append(dict_entry)
-        else:
-            print(f"ERROR Bad filename: {filename}")
+            print(f"{idx}  {filename}  WL:{file_info_wl:03d}  CY:{file_info_cy}  TS:{file_info_ts}")
             continue
 
-        print(f"{idx}  {filename}  WL:{file_info_wl:03d}  CY:{file_info_cy}  TS:{file_info_ts }")
+        # filename format 2
+        filenameRegex = re.compile(r'(\d+)_(\d+A)_(\d+)_(\d+)_(\d+).tif')
+        match = filenameRegex.search(filename)
+        if match:
+#            print(match.groups(), type(match))
+            file_info_nb = int(match.group(3))
+            file_info_wl = int(match.group(4))
+            file_info_cy = 1
+            file_info_ts = int(match.group(5))
+
+            # skip files with bad cycle infos
+            if files_list and file_info_cy < files_list[-1]['cycle']:
+                print(f"ERROR: unexpected cycle number {file_info_cy} for file: {filename}")
+                continue
+
+            dict_entry = {
+                'file_info_nb': file_info_nb,
+                'cycle': file_info_cy,
+                'wavelength': file_info_wl,
+                'timestamp': file_info_ts,
+                'filenamepath': filenamepath
+            }
+            files_list.append(dict_entry)
+            print(f"{idx}  {filename}  WL:{file_info_wl:03d}  CY:{file_info_cy}  TS:{file_info_ts}")
+            continue
+
+        # filename format 3
+        filenameRegex = re.compile(r'(\d+)_(\d+)_(C\d+).tif')
+        match = filenameRegex.search(filename)
+        if match:
+            #            print(match.groups(), type(match))
+            file_info_nb = int(match.group(1))
+            file_info_wl = int(match.group(2))
+            file_info_cy = int(match.group(3).lstrip("C"))
+            file_info_ts = 1  # TODO
+
+            # skip files with bad cycle infos
+            if files_list and file_info_cy < files_list[-1]['cycle']:
+                print(f"ERROR: unexpected cycle number {file_info_cy} for file: {filename}")
+                continue
+
+            dict_entry = {
+                'file_info_nb': file_info_nb,
+                'cycle': file_info_cy,
+                'wavelength': file_info_wl,
+                'timestamp': file_info_ts,
+                'filenamepath': filenamepath
+            }
+            files_list.append(dict_entry)
+            print(f"{idx}  {filename}  WL:{file_info_wl:03d}  CY:{file_info_cy}  TS:{file_info_ts}")
+            continue
+
+        # unknown filename format
+        print(f"ERROR unknown filename format: {filename}")
+
 
     df_files = pd.DataFrame(files_list)
 

@@ -47,12 +47,14 @@ def extract_roiset_pixel_data(
     print(df_files)
 
     # read image size from first image
-    image0 = cv.imread(df_files.iloc[0]['filenamepath'], cv.IMREAD_UNCHANGED)[:, :, ::-1]  # BGR to RGB, 16bit data
+    image0 = cv.imread(df_files.iloc[0]['filenamepath'], cv.IMREAD_UNCHANGED)
     print(f"Image shape {image0.shape}")
+    mono = len(image0.shape) == 2
+    img_size = image0.shape[:2]
 
-    # mask for one RGB channel
-    ref_mask = np.zeros(image0.shape[:2], dtype=np.uint8)
-    spot_mask = np.zeros(image0.shape[:2], dtype=np.uint8)
+    # 2D mask for one channel
+    ref_mask = np.zeros(img_size, dtype=np.uint8)
+    spot_mask = np.zeros(img_size, dtype=np.uint8)
     mask_shape = ref_mask.shape
     print(f"mask: {type(ref_mask)}, {ref_mask.dtype}, {ref_mask.shape}")
 
@@ -103,9 +105,12 @@ def extract_roiset_pixel_data(
         filename = os.path.basename(filenamepath)
         print(f"{index:4}   {filename:43}   WL:{file_info_wl:4}   CY:{file_info_cy:3}   TS:{file_info_ts:9}")
 
-        image = cv.imread(filenamepath, cv.IMREAD_UNCHANGED)[:, :, ::-1]  # BGR to RGB, 16bit data
-#        image[image<4096]=4096
-#        image -= 4096
+        if mono:
+            image = cv.imread(filenamepath, cv.IMREAD_UNCHANGED)
+            wavelengths = [445, 525, 590, 645]
+        else:
+            image = cv.imread(filenamepath, cv.IMREAD_UNCHANGED)[:, :, ::-1]  # BGR to RGB, 16bit data
+            wavelengths = [445, 525, 590, 645, 365]
         images[file_info_wl] = {'image': image, 'cycle': int(file_info_cy), 'timestamp_ms': file_info_ts}
 
     label_counter = [-1]*(nb_labels+1)  # +1 for 0 background
@@ -142,14 +147,17 @@ def extract_roiset_pixel_data(
                 'timestamp_ms': images[645]['timestamp_ms'],  # slightly inaccurate
                 'cycle': images[645]['cycle']  # should be correct
             }
-            for wl in [365, 445, 525, 590, 645]:
-                for i, color in enumerate(['R', 'G', 'B']):
-                    dict_entry[color+str(wl)] = images[wl]['image'][r][c][i]
+            for wl in wavelengths:
+                if mono:
+                    dict_entry['M'+str(wl)] = images[wl]['image'][r][c]
+                else:
+                    for i, color in enumerate(['R', 'G', 'B']):
+                        dict_entry[color+str(wl)] = images[wl]['image'][r][c][i]
 
             spot_pixel_list.append(dict_entry)
 
         else:
-            for wl in [365, 445, 525, 590, 645]:
+            for wl in wavelengths:
                 dict_entry = {
                     'spot_index': roi_index + 1,
                     'spot_name': rois[roi_index].name,
@@ -160,8 +168,11 @@ def extract_roiset_pixel_data(
                     'timestamp_ms': images[wl]['timestamp_ms'],
                     'WL': wl,
                 }
-                for i, color in enumerate(['R', 'G', 'B']):
-                    dict_entry[color] = images[wl]['image'][r][c][i]
+                if mono:
+                    dict_entry['M'] = images[wl]['image'][r][c]
+                else:
+                    for i, color in enumerate(['R', 'G', 'B']):
+                        dict_entry[color] = images[wl]['image'][r][c][i]
 
                 spot_pixel_list.append(dict_entry)
 

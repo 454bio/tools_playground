@@ -157,7 +157,7 @@ def calculate_and_apply_transformation(
     if channel_names_subset:
         assert len(channel_names_subset) >= 2, "Please provide at least 2 channels"
         for ch in channel_names_subset:
-            pattern = "^[R|G|B](\d{3})$"
+            pattern = "^[M|R|G|B](\d{3})$"
             match = re.search(pattern, ch)
             if not match:
                 print(f"{ch} doesn't match format, e.g. R365")
@@ -187,10 +187,6 @@ def calculate_and_apply_transformation(
     n_features = len(channel_names)
     n_targets = len(dye_bases)
 
-    offset = 4096
-    BG_threshold = 25500
-    SC_threshold = 64000*4
-
     unique_spot_names = df['spot_name'].unique()
     print("spots:", unique_spot_names)
     # make sure all dye_bases are in the spots_ist
@@ -204,6 +200,9 @@ def calculate_and_apply_transformation(
     X = df[channel_names].to_numpy()
 
     # camera offset correction
+    offset = 4096
+    BG_threshold = 25500
+    SC_threshold = 64000*4
     X[X < offset] = offset
     X -= offset
 
@@ -271,16 +270,24 @@ def calculate_and_apply_transformation(
             filenamepath = cyclefilename['filenamepath']
             wavelength = cyclefilename['wavelength']
             print("WL:", filenamepath, wavelength)
-            image = cv.imread(filenamepath, cv.IMREAD_UNCHANGED)[:, :, ::-1]  # BGR to RGB, 16bit data
-
-            # safe offset correction
-            image[image < offset] = offset
-            image -= offset
+            image = cv.imread(filenamepath, cv.IMREAD_UNCHANGED)  # 16bit data
 
             print(f"RGB image shape: {image.shape}")
-            image_map['R'+str(wavelength)] = image[:, :, 0]
-            image_map['G'+str(wavelength)] = image[:, :, 1]
-            image_map['B'+str(wavelength)] = image[:, :, 2]
+            mono = len(image.shape) == 2
+            if mono:
+                # no offset correction required, microscope camera is true 16 bit
+                image_map['M' + str(wavelength)] = image
+            else:
+                image = image[:, :, ::-1]  # BGR to RGB
+                # safe offset correction
+                image[image < offset] = offset
+                image -= offset
+
+                image_map['R' + str(wavelength)] = image[:, :, 0]
+                image_map['G' + str(wavelength)] = image[:, :, 1]
+                image_map['B' + str(wavelength)] = image[:, :, 2]
+
+
 
         channels = [image_map[channel_name] for channel_name in channel_names]
 
