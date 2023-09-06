@@ -169,6 +169,11 @@ def calculate_and_apply_transformation(
 
     df = pd.read_csv(spot_data_filename)
     print(df)
+    
+    # TODO, HACK, fix me
+    if 'M445' in df.columns:
+        channel_names = ['M445', 'M525', 'M590', 'M645']
+
 
     '''
         spot  pixel_i  timestamp_ms  cycle  R365  ...   G590   B590   R645   G645   B645

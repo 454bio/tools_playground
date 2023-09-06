@@ -30,7 +30,7 @@ def plot_spot_trajectories(
     if spot_names_subset:
         unique_spots = spot_names_subset
     else:
-        unique_spots = set(df['spot'].unique())
+        unique_spots = set(df['spot_name'].unique())
 
     print(len(channels), "channels: ", channels)
     print(len(unique_spots), "unique_spots: ", unique_spots)
@@ -53,9 +53,9 @@ def plot_spot_trajectories(
             fig.update_xaxes(title_text=x_channel, row=r, col=c + 1)
 
             for s in unique_spots:
-                df_spot = df.loc[(df['spot'] == s)]
-                df_x = df.loc[(df['spot'] == s) & (df['WL'] == int(x_channel[1:]))]
-                df_y = df.loc[(df['spot'] == s) & (df['WL'] == int(y_channel[1:]))]
+                df_spot = df.loc[(df['spot_name'] == s)]
+                df_x = df.loc[(df['spot_name'] == s) & (df['WL'] == int(x_channel[1:]))]
+                df_y = df.loc[(df['spot_name'] == s) & (df['WL'] == int(y_channel[1:]))]
 
                 fig.add_trace(
                     go.Scatter(
@@ -73,8 +73,8 @@ def plot_spot_trajectories(
         print("-")  # end of row reached
 
     fig.update_layout(
-        height=3000,
-        width=3000,
+        height=2560,
+        width=2560,
         title_text=""
     )
     fig.update_layout(
