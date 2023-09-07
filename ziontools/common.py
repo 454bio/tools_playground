@@ -122,7 +122,7 @@ def get_cycle_files(inputpath: str) -> pd.DataFrame:
             file_info_nb = int(match.group(1))
             file_info_wl = int(match.group(2))
             file_info_cy = int(match.group(3).lstrip("C"))
-            file_info_ts = 1  # TODO
+            file_info_ts = file_info_nb  # TODO
 
             # skip files with bad cycle infos
             if files_list and file_info_cy < files_list[-1]['cycle']:
