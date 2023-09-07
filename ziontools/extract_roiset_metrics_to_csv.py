@@ -19,11 +19,13 @@ def extract_roiset_metrics(inputpath: str, roizipfilepath : str, outputfilename:
     rows_list = []
 
     # read image size from first image
-    image0 = cv.imread(df_files.iloc[0]['filenamepath'], cv.IMREAD_UNCHANGED)[:, :, ::-1]  # BGR to RGB, 16bit data
+    image0 = cv.imread(df_files.iloc[0]['filenamepath'], cv.IMREAD_UNCHANGED)
     print(f"Image shape {image0.shape}")
+    mono = len(image0.shape) == 2
+    img_size = image0.shape[:2]
 
-    # mask for one RGB channel
-    mask = np.zeros(image0.shape[:2], dtype=np.uint8)
+    # 2D mask for one channel
+    mask = np.zeros(img_size, dtype=np.uint8)
     print(f"mask: {type(mask)}, {mask.dtype}, {mask.shape}")
 
     for idx, roi in enumerate(rois):
@@ -41,7 +43,7 @@ def extract_roiset_metrics(inputpath: str, roizipfilepath : str, outputfilename:
 
     # how many regions?
     nb_labels = len(rois)
-    label_ids = np.arange(1, nb_labels + 1) # range(1, nb_labels + 1)
+    label_ids = np.arange(1, nb_labels + 1)  # range(1, nb_labels + 1)
     print(f"labels: {nb_labels}")
 
     sizes = ndimage.sum_labels(np.ones(mask.shape), mask, range(nb_labels + 1)).astype(int)
@@ -62,43 +64,74 @@ def extract_roiset_metrics(inputpath: str, roizipfilepath : str, outputfilename:
         filename = os.path.basename(filenamepath)
         print(f"{index:4}   {filename:43}   WL:{file_info_wl:4}   CY:{file_info_cy:3}   TS:{file_info_ts:9}")
 
-        image = cv.imread(filenamepath, cv.IMREAD_UNCHANGED)[:, :, ::-1]  # BGR to RGB, 16bit data
+        if mono:
+            image = cv.imread(filenamepath, cv.IMREAD_UNCHANGED)
 
+            M_mean = ndimage.labeled_comprehension(image, mask, label_ids, np.mean, int, 0)
 
-        # apply mean mask
+            M_min = ndimage.labeled_comprehension(image, mask, label_ids, np.min, int, 0)
 
-        R_mean = ndimage.labeled_comprehension(image[:,:,0], mask, label_ids, np.mean, int, 0)
-        G_mean = ndimage.labeled_comprehension(image[:,:,1], mask, label_ids, np.mean, int, 0)
-        B_mean = ndimage.labeled_comprehension(image[:,:,2], mask, label_ids, np.mean, int, 0)
+            M_max = ndimage.labeled_comprehension(image, mask, label_ids, np.max, int, 0)
 
-        R_min = ndimage.labeled_comprehension(image[:,:,0], mask, label_ids, np.min, int, 0)
-        G_min = ndimage.labeled_comprehension(image[:,:,1], mask, label_ids, np.min, int, 0)
-        B_min = ndimage.labeled_comprehension(image[:,:,2], mask, label_ids, np.min, int, 0)
+            M_std = ndimage.labeled_comprehension(image, mask, label_ids, np.std, int, 0)
 
-        R_max = ndimage.labeled_comprehension(image[:,:,0], mask, label_ids, np.max, int, 0)
-        G_max = ndimage.labeled_comprehension(image[:,:,1], mask, label_ids, np.max, int, 0)
-        B_max = ndimage.labeled_comprehension(image[:,:,2], mask, label_ids, np.max, int, 0)
+            for i, roi in enumerate(rois):
+                #            if __debug__:
+                #                print(roi.name, roi.top, roi.bottom, roi.left, roi.right, roi.roitype, roi.subtype, roi.options, roi.version, roi.props, roi.position)
 
-        R_std = ndimage.labeled_comprehension(image[:,:,0], mask, label_ids, np.std, int, 0)
-        G_std = ndimage.labeled_comprehension(image[:,:,1], mask, label_ids, np.std, int, 0)
-        B_std = ndimage.labeled_comprehension(image[:,:,2], mask, label_ids, np.std, int, 0)
+                dict_entry = {
+                    'image_number': file_info_nb,
+                    'spot_index': i + 1,
+                    'spot_name': roi.name,
+                    'cycle': file_info_cy,
+                    'WL': file_info_wl,
+                    'TS': file_info_ts,
+                    'Mavg': M_mean[i],
+                    'Mmin': M_min[i],
+                    'Mmax': M_max[i],
+                    'Mstd': M_std[i],
+                }
+                rows_list.append(dict_entry)
 
-        for i, roi in enumerate(rois):
+        else:
+            image = cv.imread(filenamepath, cv.IMREAD_UNCHANGED)[:, :, ::-1]  # BGR to RGB, 16bit data
 
-#            if __debug__:
-#                print(roi.name, roi.top, roi.bottom, roi.left, roi.right, roi.roitype, roi.subtype, roi.options, roi.version, roi.props, roi.position)
+                # apply mean mask
 
-            dict_entry = {
-                'image_number': file_info_nb,
-                'spot_index': i+1,
-                'spot_name': roi.name,
-                'cycle': file_info_cy, 'WL': file_info_wl, 'TS': file_info_ts,
-                'Ravg': R_mean[i], 'Gavg': G_mean[i], 'Bavg': B_mean[i],
-                'Rmin': R_min[i], 'Gmin': G_min[i], 'Bmin': B_min[i],
-                'Rmax': R_max[i], 'Gmax': G_max[i], 'Bmax': B_max[i],
-                'Rstd': R_std[i], 'Gstd': G_std[i], 'Bstd': B_std[i],
-            }
-            rows_list.append(dict_entry)
+            R_mean = ndimage.labeled_comprehension(image[:,:,0], mask, label_ids, np.mean, int, 0)
+            G_mean = ndimage.labeled_comprehension(image[:,:,1], mask, label_ids, np.mean, int, 0)
+            B_mean = ndimage.labeled_comprehension(image[:,:,2], mask, label_ids, np.mean, int, 0)
+
+            R_min = ndimage.labeled_comprehension(image[:,:,0], mask, label_ids, np.min, int, 0)
+            G_min = ndimage.labeled_comprehension(image[:,:,1], mask, label_ids, np.min, int, 0)
+            B_min = ndimage.labeled_comprehension(image[:,:,2], mask, label_ids, np.min, int, 0)
+
+            R_max = ndimage.labeled_comprehension(image[:,:,0], mask, label_ids, np.max, int, 0)
+            G_max = ndimage.labeled_comprehension(image[:,:,1], mask, label_ids, np.max, int, 0)
+            B_max = ndimage.labeled_comprehension(image[:,:,2], mask, label_ids, np.max, int, 0)
+
+            R_std = ndimage.labeled_comprehension(image[:,:,0], mask, label_ids, np.std, int, 0)
+            G_std = ndimage.labeled_comprehension(image[:,:,1], mask, label_ids, np.std, int, 0)
+            B_std = ndimage.labeled_comprehension(image[:,:,2], mask, label_ids, np.std, int, 0)
+
+            for i, roi in enumerate(rois):
+
+    #            if __debug__:
+    #                print(roi.name, roi.top, roi.bottom, roi.left, roi.right, roi.roitype, roi.subtype, roi.options, roi.version, roi.props, roi.position)
+
+                dict_entry = {
+                    'image_number': file_info_nb,
+                    'spot_index': i+1,
+                    'spot_name': roi.name,
+                    'cycle': file_info_cy,
+                    'WL': file_info_wl,
+                    'TS': file_info_ts,
+                    'Ravg': R_mean[i], 'Gavg': G_mean[i], 'Bavg': B_mean[i],
+                    'Rmin': R_min[i], 'Gmin': G_min[i], 'Bmin': B_min[i],
+                    'Rmax': R_max[i], 'Gmax': G_max[i], 'Bmax': B_max[i],
+                    'Rstd': R_std[i], 'Gstd': G_std[i], 'Bstd': B_std[i],
+                }
+                rows_list.append(dict_entry)
 
     # create final dataframe
     df = pd.DataFrame(rows_list)

@@ -16,10 +16,10 @@ def plot_spot_trajectories(
 
     default_channel_names = [
         'R365', 'G365', 'B365',
-        'R445', 'G445', 'B445',
-        'R525', 'G525', 'B525',
-        'R590', 'G590', 'B590',
-        'R645', 'G645', 'B645'
+        'R445', 'G445', 'B445', 'M445',
+        'R525', 'G525', 'B525', 'M525',
+        'R590', 'G590', 'B590', 'M590',
+        'R645', 'G645', 'B645', 'M645',
     ]
 
     if channel_names_subset:
@@ -31,6 +31,9 @@ def plot_spot_trajectories(
         unique_spots = spot_names_subset
     else:
         unique_spots = set(df['spot_name'].unique())
+
+    # use only existing channels
+    channels = [channel for channel in channels if channel[0]+'avg' in df.columns]
 
     print(len(channels), "channels: ", channels)
     print(len(unique_spots), "unique_spots: ", unique_spots)
