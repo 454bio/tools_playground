@@ -67,6 +67,11 @@ def plot_triangle(
         'R590': 30000, 'G590': 25000, 'B590': 10000,
         'R645': 35000, 'G645': 15000, 'B645': 10000,
     }
+    # TODO, HACK
+    if 'M445' in channels:
+        min_intensity = 0
+    else:
+        min_intensity = 4000
 
     spot_indizes = df.spot_index.unique()
 
@@ -106,11 +111,11 @@ def plot_triangle(
             #            if r == len(channels) - 1:
             fig.update_xaxes(title_text=x_channel, row=r, col=c + 1)
             if use_custom_max_intensity_map:
-                fig.update_xaxes(range=[4000, custom_max_intensity[x_channel]], row=r, col=c + 1)
-                fig.update_yaxes(range=[4000, custom_max_intensity[y_channel]], row=r, col=c + 1)
+                fig.update_xaxes(range=[min_intensity, custom_max_intensity[x_channel]], row=r, col=c + 1)
+                fig.update_yaxes(range=[min_intensity, custom_max_intensity[y_channel]], row=r, col=c + 1)
             else:
-                fig.update_xaxes(range=[4000, max(df[x_channel])], row=r, col=c + 1)
-                fig.update_yaxes(range=[4000, max(df[y_channel])], row=r, col=c + 1)
+                fig.update_xaxes(range=[min_intensity, max(df[x_channel])], row=r, col=c + 1)
+                fig.update_yaxes(range=[min_intensity, max(df[y_channel])], row=r, col=c + 1)
         #            print(f"max x {x_channel} : {max(df_spot[x_channel])}, max y {y_channel} : {max(df_spot[y_channel])}")
         print("-")  # end of row reached
 
