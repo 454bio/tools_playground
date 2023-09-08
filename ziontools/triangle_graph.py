@@ -101,7 +101,7 @@ def plot_triangle(
                         marker=dict(size=2),
                         mode='markers',
                         name=str(spot_name),
-                        legendgroup=s, showlegend=(r == 1 and c == 0)
+                        legendgroup=spot_name, showlegend=(r == 1 and c == 0)
                     ),
                     row=r, col=c + 1
                 )
