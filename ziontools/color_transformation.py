@@ -204,12 +204,15 @@ def calculate_and_apply_transformation(
     # intensity data
     X = df[channel_names].to_numpy()
 
+    mono = 'M445' in df.columns
+
     # camera offset correction
-    offset = 4096
-    BG_threshold = 25500
-    SC_threshold = 64000*4
-    X[X < offset] = offset
-    X -= offset
+    if not mono:
+        offset = 4096
+        BG_threshold = 25500
+        SC_threshold = 64000*4
+        X[X < offset] = offset
+        X -= offset
 
     print("Datamatrix dimension:", X.shape)
 
@@ -274,11 +277,9 @@ def calculate_and_apply_transformation(
         for i, cyclefilename in cyclefilenames.iterrows():
             filenamepath = cyclefilename['filenamepath']
             wavelength = cyclefilename['wavelength']
-            print("WL:", filenamepath, wavelength)
             image = cv.imread(filenamepath, cv.IMREAD_UNCHANGED)  # 16bit data
+            print("WL:", filenamepath, wavelength, image.shape)
 
-            print(f"RGB image shape: {image.shape}")
-            mono = len(image.shape) == 2
             if mono:
                 # no offset correction required, microscope camera is true 16 bit
                 image_map['M' + str(wavelength)] = image
