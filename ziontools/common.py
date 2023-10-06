@@ -51,6 +51,11 @@ oligo_sequences = {
     '665': 'TCTGATCTCGTATGCC',
 }
 
+FILENAME_FORMAT_1 = re.compile(r'(\d+)_(\d+A)_(\d+)_(\d+)_(C\d+)_(\d+).tif')
+FILENAME_FORMAT_2 = re.compile(r'(\d+)_(\d+A)_(\d+)_(\d+)_(\d+).tif')
+FILENAME_FORMAT_3 = re.compile(r'(\d+)_(\d+)_(C\d+).tif')
+FILENAME_FORMAT_4 = re.compile(r'(\d+)_(\d+)_(\d+)_(C\d+)_(\d+)_(P[\w\d-]+).tif')
+
 def get_cycle_files(inputpath: str) -> pd.DataFrame:
 
     file_names = sorted(glob.glob(inputpath + "/*tif", recursive=False))
@@ -62,9 +67,7 @@ def get_cycle_files(inputpath: str) -> pd.DataFrame:
 
         filename = os.path.basename(filenamepath)
 
-        # filename format 1
-        filenameRegex = re.compile(r'(\d+)_(\d+A)_(\d+)_(\d+)_(C\d+)_(\d+).tif')
-        match = filenameRegex.search(filename)
+        match = FILENAME_FORMAT_1.search(filename)
         if match:
 #            print(match.groups(), type(match))
             file_info_nb = int(match.group(1))
@@ -88,9 +91,7 @@ def get_cycle_files(inputpath: str) -> pd.DataFrame:
             print(f"{idx}  {filename}  WL:{file_info_wl:03d}  CY:{file_info_cy}  TS:{file_info_ts}")
             continue
 
-        # filename format 2
-        filenameRegex = re.compile(r'(\d+)_(\d+A)_(\d+)_(\d+)_(\d+).tif')
-        match = filenameRegex.search(filename)
+        match = FILENAME_FORMAT_2.search(filename)
         if match:
 #            print(match.groups(), type(match))
             file_info_nb = int(match.group(3))
@@ -115,14 +116,36 @@ def get_cycle_files(inputpath: str) -> pd.DataFrame:
             continue
 
         # filename format 3
-        filenameRegex = re.compile(r'(\d+)_(\d+)_(C\d+).tif')
-        match = filenameRegex.search(filename)
+        match = FILENAME_FORMAT_3.search(filename)
         if match:
             #            print(match.groups(), type(match))
             file_info_nb = int(match.group(1))
             file_info_wl = int(match.group(2))
             file_info_cy = int(match.group(3).lstrip("C"))
             file_info_ts = file_info_nb  # TODO
+
+            # skip files with bad cycle infos
+            if files_list and file_info_cy < files_list[-1]['cycle']:
+                print(f"ERROR: unexpected cycle number {file_info_cy} for file: {filename}")
+                continue
+
+            dict_entry = {
+                'file_info_nb': file_info_nb,
+                'cycle': file_info_cy,
+                'wavelength': file_info_wl,
+                'timestamp': file_info_ts,
+                'filenamepath': filenamepath
+            }
+            files_list.append(dict_entry)
+            print(f"{idx}  {filename}  WL:{file_info_wl:03d}  CY:{file_info_cy}  TS:{file_info_ts}")
+            continue
+
+        match = FILENAME_FORMAT_4.search(filename)
+        if match:
+            file_info_nb = int(match.group(1))
+            file_info_wl = int(match.group(3))
+            file_info_cy = int(match.group(4).lstrip("C"))
+            file_info_ts = int(match.group(5))
 
             # skip files with bad cycle infos
             if files_list and file_info_cy < files_list[-1]['cycle']:
