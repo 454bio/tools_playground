@@ -25,7 +25,7 @@ def extract_roiset_metrics(inputpath: str, roizipfilepath : str, outputfilename:
     img_size = image0.shape[:2]
 
     # 2D mask for one channel
-    mask = np.zeros(img_size, dtype=np.uint8)
+    mask = np.zeros(img_size, dtype=np.uint16)
     print(f"mask: {type(mask)}, {mask.dtype}, {mask.shape}")
 
     for idx, roi in enumerate(rois):

@@ -19,7 +19,7 @@ dye_bases = ["G", "C", "A", "T"]
 
 def get_roi_mask(shape, rois):
 
-    mask = np.zeros(shape, dtype=np.uint8)
+    mask = np.zeros(shape, dtype=np.uint16)
     print(f"mask: {type(mask)}, {mask.dtype}, {mask.shape}")
 
     for idx, roi in enumerate(rois):
@@ -356,7 +356,7 @@ def calculate_and_apply_transformation(
 
                 #    plt.show()
 
-            mask = np.zeros(A.shape[:2], dtype=np.uint8)
+            mask = np.zeros(A.shape[:2], dtype=np.uint16)
             print(f"mask: {type(mask)}, {mask.dtype}, {mask.shape}")
 
             counts = [0] * n_targets

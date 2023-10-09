@@ -53,8 +53,8 @@ def extract_roiset_pixel_data(
     img_size = image0.shape[:2]
 
     # 2D mask for one channel
-    ref_mask = np.zeros(img_size, dtype=np.uint8)
-    spot_mask = np.zeros(img_size, dtype=np.uint8)
+    ref_mask = np.zeros(img_size, dtype=np.uint16)
+    spot_mask = np.zeros(img_size, dtype=np.uint16)
     mask_shape = ref_mask.shape
     print(f"mask: {type(ref_mask)}, {ref_mask.dtype}, {ref_mask.shape}")
 
